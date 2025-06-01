@@ -31,19 +31,41 @@ class _AdminMatchesScreenState extends State<AdminMatchesScreen> {
         return Scaffold(
           body: matchProvider.isLoading
               ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
-                  onRefresh: () async {
-                    await matchProvider.loadMatches();
-                  },
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: matchProvider.matches.length,
-                    itemBuilder: (context, index) {
-                      final match = matchProvider.matches[index];
-                      return _buildMatchCard(context, match);
-                    },
-                  ),
-                ),
+              : matchProvider.errorMessage != null
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Error: ${matchProvider.errorMessage}',
+                            style: const TextStyle(color: Colors.red),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => matchProvider.loadMatches(),
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : matchProvider.matches.isEmpty
+                      ? const Center(
+                          child: Text('No matches available'),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: () async {
+                            await matchProvider.loadMatches();
+                          },
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: matchProvider.matches.length,
+                            itemBuilder: (context, index) {
+                              final match = matchProvider.matches[index];
+                              return _buildMatchCard(context, match);
+                            },
+                          ),
+                        ),
           floatingActionButton: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -107,7 +129,8 @@ class _AdminMatchesScreenState extends State<AdminMatchesScreen> {
                           ),
                         )
                       else
-                        const Text('VS', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text('VS',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -154,7 +177,9 @@ class _AdminMatchesScreenState extends State<AdminMatchesScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                match.isFinished ? 'Pemenang: ${match.winner}' : 'Status: ${match.winner}',
+                match.isFinished
+                    ? 'Pemenang: ${match.winner}'
+                    : 'Status: ${match.winner}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,

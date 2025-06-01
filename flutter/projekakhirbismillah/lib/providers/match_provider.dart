@@ -21,16 +21,37 @@ class MatchProvider with ChangeNotifier {
 
     try {
       final response = await ApiService.getMatchSchedules();
-      if (response['success'] == true && response['data'] is List) {
-        _matches = (response['data'] as List)
-            .map((json) => MatchSchedule.fromJson(json))
-            .toList();
+      print('Raw API Response: $response'); // Debug log
+
+      if (response['success'] == true && response['data'] != null) {
+        final data = response['data'];
+        // Handle nested success response
+        if (data['success'] == true && data['data'] is List) {
+          try {
+            _matches = (data['data'] as List).map((json) {
+              print('Processing match: $json'); // Debug log
+              return MatchSchedule.fromJson(json);
+            }).toList();
+            print('Parsed ${_matches.length} matches'); // Debug log
+          } catch (parseError) {
+            print('Parse error: $parseError'); // Debug log
+            _errorMessage = 'Error parsing match data: $parseError';
+            _matches = [];
+          }
+        } else {
+          print('Invalid data format: $data'); // Debug log
+          _errorMessage = 'Invalid data format received';
+          _matches = [];
+        }
       } else {
-        _matches = [];
+        print('Invalid response: $response'); // Debug log
         _errorMessage = response['message'] ?? 'Failed to load matches';
+        _matches = [];
       }
     } catch (e) {
+      print('Network error: $e'); // Debug log
       _errorMessage = 'Network error: $e';
+      _matches = [];
     }
 
     _isLoading = false;

@@ -5,6 +5,7 @@ import '../auth/login_screen.dart';
 import 'user_matches_screen.dart';
 import 'user_news_screen.dart';
 import 'leaderboard_screen.dart';
+import '../../../services/api_service.dart';
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({super.key});
@@ -15,12 +16,32 @@ class UserDashboard extends StatefulWidget {
 
 class _UserDashboardState extends State<UserDashboard> {
   int _currentIndex = 0;
-  
+
   final List<Widget> _screens = [
     const UserMatchesScreen(),
     const UserNewsScreen(),
     const LeaderboardScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    verifyToken();
+  }
+
+  Future<void> verifyToken() async {
+    final token = await ApiService.getToken();
+    print('Dashboard token check: ${token?.substring(0, 20)}...'); // Debug log
+
+    if (token == null || token.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +57,8 @@ class _UserDashboardState extends State<UserDashboard> {
                 padding: const EdgeInsets.only(right: 8.0),
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.orange,
                       borderRadius: BorderRadius.circular(12),

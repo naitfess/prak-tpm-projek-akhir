@@ -102,15 +102,11 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
 
     bool isCorrect = false;
     if (match.isFinished && userPrediction != null) {
-      // Check for draw prediction
-      if (match.skor1 == match.skor2 && userPrediction.predictedTeamId == 0) {
+      if (match.winner == 'Seri' && userPrediction.predictedTeamId == 0) {
         isCorrect = true;
-      } 
-      // Check for team win prediction - skor1 dan skor2 sudah non-null
-      else if (match.skor1 > match.skor2 && userPrediction.predictedTeamId == (match.team1?.id ?? -1)) {
+      } else if (userPrediction.predictedTeamId == (match.team1?.id ?? -1) && match.winner == (match.team1?.name ?? '')) {
         isCorrect = true;
-      } 
-      else if (match.skor2 > match.skor1 && userPrediction.predictedTeamId == (match.team2?.id ?? -1)) {
+      } else if (userPrediction.predictedTeamId == (match.team2?.id ?? -1) && match.winner == (match.team2?.name ?? '')) {
         isCorrect = true;
       }
     }
@@ -122,55 +118,111 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Match info dengan error handling
+            // Match teams and scores
             Row(
               children: [
                 Expanded(
                   child: Column(
                     children: [
                       Text(
-                        match.team1?.name ?? 'Tim 1',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        match.team1?.name ?? 'Team 1',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                         textAlign: TextAlign.center,
                       ),
-                      if (match.isFinished)
-                        Text(
-                          '${match.skor1}',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue,
+                      if (match.team1?.logoUrl != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Image.network(
+                            match.team1!.logoUrl!,
+                            height: 40,
+                            width: 40,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(Icons.sports_soccer, size: 40, color: Colors.blue);
+                            },
                           ),
                         ),
                     ],
                   ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    'VS',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
+                const SizedBox(width: 16),
+                Column(
+                  children: [
+                    if (match.isFinished)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green),
+                        ),
+                        child: Text(
+                          '${match.skor1} - ${match.skor2}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                            color: Colors.green,
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue),
+                        ),
+                        child: const Text(
+                          'VS',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${match.date.day}/${match.date.month}/${match.date.year}',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
+                    Text(
+                      match.time,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     children: [
                       Text(
-                        match.team2?.name ?? 'Tim 2',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        match.team2?.name ?? 'Team 2',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                         textAlign: TextAlign.center,
                       ),
-                      if (match.isFinished)
-                        Text(
-                          '${match.skor2}',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue,
+                      if (match.team2?.logoUrl != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Image.network(
+                            match.team2!.logoUrl!,
+                            height: 40,
+                            width: 40,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(Icons.sports_soccer, size: 40, color: Colors.blue);
+                            },
                           ),
                         ),
                     ],
@@ -178,18 +230,7 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                 ),
               ],
             ),
-            
-            const SizedBox(height: 12),
-            
-            // Date and time dengan error handling
-            Text(
-              'Tanggal: ${_formatDate(match.date)}',
-              style: const TextStyle(color: Colors.grey),
-            ),
-            Text(
-              'Waktu: ${_formatTime(match.time)}',
-              style: const TextStyle(color: Colors.grey),
-            ),
+            const SizedBox(height: 16),
             
             // Match status and prediction info
             if (match.isFinished) ...[
@@ -201,7 +242,7 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Hasil Akhir - ${match.winner}',
+                  'Hasil Akhir - Pemenang: ${match.winner}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -230,7 +271,7 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                       ),
                       Text(
                         isCorrect
-                            ? '✓ Prediksi Benar! (+10 poin)'
+                            ? '✓ Prediksi Benar!'
                             : '✗ Prediksi Salah',
                         style: const TextStyle(
                           color: Colors.white,
@@ -326,41 +367,18 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            if (match.isFinished) ...[
-              const SizedBox(height: 4),
+            const SizedBox(height: 8),
+            if (match.isFinished)
               Text(
-                'Skor: ${match.skor1} - ${match.skor2}',
+                'Pemenang: ${match.winner}',
                 style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
                   color: Colors.blue,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ],
           ],
         ),
       ),
     );
-  }
-
-  String _formatDate(String date) {
-    try {
-      final parsedDate = DateTime.parse(date);
-      return '${parsedDate.day}/${parsedDate.month}/${parsedDate.year}';
-    } catch (e) {
-      return date; // Return original if parsing fails
-    }
-  }
-
-  String _formatTime(String time) {
-    try {
-      final timeParts = time.split(':');
-      if (timeParts.length >= 2) {
-        return '${timeParts[0]}:${timeParts[1]}';
-      }
-      return time;
-    } catch (e) {
-      return time; // Return original if parsing fails
-    }
   }
 }

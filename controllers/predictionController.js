@@ -11,33 +11,55 @@ class PredictionController {
   // Create prediction
   static async createPrediction(req, res) {
     try {
-      console.log('Create prediction request body:', req.body);
-      console.log('User from token:', req.user);
+      // Debug logs for request
+      console.log('==== Create Prediction Debug ====');
+      console.log('Headers:', req.headers);
+      console.log('Auth token:', req.headers.authorization);
+      console.log('User data:', req.user);
+      console.log('Request body:', req.body);
 
       const { error } = predictionSchema.validate(req.body);
       if (error) {
-        console.log('Validation error:', error.details[0].message);
+        console.log('Validation error:', error.details);
         return res.status(400).json({
           success: false,
-          message: error.details[0].message
+          message: error.details[0].message,
+          debug: { error: error.details }
         });
       }
 
       const { match_schedule_id, predicted_team_id } = req.body;
+      if (!req.user || !req.user.id) {
+        console.log('No user found in request');
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required',
+          debug: { user: req.user }
+        });
+      }
+
       const user_id = req.user.id;
 
-      console.log('Prediction params:', { match_schedule_id, predicted_team_id, user_id });
-
-      // Check if match exists
+      // Match validation with detailed logging
       const match = await MatchSchedule.findByPk(match_schedule_id);
-      console.log('Match found:', match ? 'Yes' : 'No');
+      console.log('Match found:', match);
       
       if (!match) {
         return res.status(404).json({
           success: false,
-          message: 'Match not found'
+          message: 'Match not found',
+          debug: { match_schedule_id }
         });
       }
+
+      // Additional validations with logging
+      console.log('Match status:', {
+        skor1: match.skor1,
+        skor2: match.skor2,
+        team1_id: match.team1_id,
+        team2_id: match.team2_id,
+        predicted_team_id
+      });
 
       // Check if match is still upcoming (skor1 and skor2 both 0)
       console.log('Match scores:', { skor1: match.skor1, skor2: match.skor2 });
@@ -82,7 +104,13 @@ class PredictionController {
         status: null
       });
 
-      console.log('Prediction created:', prediction.id);
+      // After successful creation
+      console.log('Prediction created successfully:', {
+        user_id,
+        match_schedule_id,
+        predicted_team_id,
+        prediction_id: prediction.id
+      });
 
       // Get prediction with associations
       const predictionWithDetails = await Prediction.findByPk(prediction.id, {
@@ -108,11 +136,17 @@ class PredictionController {
         data: predictionWithDetails
       });
     } catch (error) {
-      console.error('Error creating prediction:', error);
-      console.error('Error stack:', error.stack);
+      console.error('Prediction creation error:', {
+        message: error.message,
+        stack: error.stack,
+        user: req?.user?.id,
+        body: req.body
+      });
+      
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: 'Internal server error',
+        debug: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   }
