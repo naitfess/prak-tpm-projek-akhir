@@ -15,21 +15,30 @@ const login = async (req, res) => {
 
     const user = await User.findOne({ where: { username } });
     if (!user || !(await user.comparePassword(password))) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
     }
 
     const token = generateToken(user);
-    res.json({ 
+    res.json({
+      success: true,
       message: 'Login successful',
       token,
       user: {
         id: user.id,
         username: user.username,
-        role: user.role
+        role: user.role,
+        poin: user.poin
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
   }
 };
 

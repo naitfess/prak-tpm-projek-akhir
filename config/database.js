@@ -1,20 +1,14 @@
 require('dotenv').config();
+const { Sequelize } = require('sequelize');
 
-module.exports = {
-  development: {
-    username: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
-    dialect: 'mysql',
-    logging: false
-  },
-  production: {
-    username: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
-    dialect: 'mysql',
-    logging: false
+const sequelize = new Sequelize('api_tpm', 'root', '', {
+  host: 'localhost',
+  dialect: 'mysql',
+  logging: false, // Set to console.log to see SQL queries
+  define: {
+    timestamps: true,
+    underscored: false
   }
-};
+});
+
+module.exports = { sequelize };

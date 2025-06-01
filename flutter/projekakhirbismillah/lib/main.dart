@@ -55,6 +55,11 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   _checkAuthStatus() async {
+    // Debug: Check token at startup
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    print('Token at startup: ${token != null ? "${token.substring(0, 20)}..." : "null"}');
+    
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await authProvider.checkAuthStatus();
 

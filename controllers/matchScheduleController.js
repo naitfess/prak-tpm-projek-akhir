@@ -3,15 +3,43 @@ const { MatchSchedule, Team, Prediction, User } = require('../models');
 class MatchScheduleController {
   static async getAllMatches(req, res) {
     try {
-      const matches = await MatchSchedule.findAll({
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const offset = (page - 1) * limit;
+
+      const { count, rows } = await MatchSchedule.findAndCountAll({
         include: [
-          { model: Team, as: 'team1', attributes: ['name'] },
-          { model: Team, as: 'team2', attributes: ['name'] }
-        ]
+          { model: Team, as: 'team1', attributes: ['id', 'name'] },
+          { model: Team, as: 'team2', attributes: ['id', 'name'] }
+        ],
+        order: [['date', 'ASC'], ['time', 'ASC']],
+        limit,
+        offset
       });
-      res.json(matches);
+
+      // Format data untuk konsistensi
+      const formattedRows = rows.map(match => ({
+        ...match.toJSON(),
+        date: match.date, // Pastikan format YYYY-MM-DD
+        time: match.time  // Pastikan format HH:MM:SS
+      }));
+
+      res.json({
+        success: true,
+        data: formattedRows,
+        pagination: {
+          total: count,
+          page,
+          limit,
+          totalPages: Math.ceil(count / limit)
+        }
+      });
     } catch (error) {
-      res.status(500).json({ message: 'Server error', error: error.message });
+      console.error('Error getting matches:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
     }
   }
 

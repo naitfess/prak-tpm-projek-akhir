@@ -1,6 +1,6 @@
 'use strict';
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('./index');
+const { sequelize } = require('../config/database'); // Destructure sequelize from config
 
 const Prediction = sequelize.define('Prediction', {
   id: {
@@ -8,60 +8,35 @@ const Prediction = sequelize.define('Prediction', {
     primaryKey: true,
     autoIncrement: true
   },
-  userId: {
+  user_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'users',
+      model: 'Users',
       key: 'id'
     }
   },
-  matchScheduleId: {
+  match_schedule_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'match_schedules',
+      model: 'MatchSchedules',
       key: 'id'
     }
   },
-  homeTeamScore: {
+  predicted_team_id: {
     type: DataTypes.INTEGER,
-    allowNull: false,
-    defaultValue: 0
+    allowNull: false
+    // Hapus references constraint untuk allow 0 (draw prediction)
   },
-  awayTeamScore: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    defaultValue: 0
-  },
-  points: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    defaultValue: 0
-  },
-  isCorrect: {
+  status: {
     type: DataTypes.BOOLEAN,
     allowNull: true,
-    defaultValue: false
+    defaultValue: null
   }
 }, {
   tableName: 'predictions',
   timestamps: true
 });
-
-// Define associations
-Prediction.associate = function(models) {
-  // Prediction belongs to User
-  Prediction.belongsTo(models.User, {
-    foreignKey: 'userId',
-    as: 'user'
-  });
-  
-  // Prediction belongs to MatchSchedule
-  Prediction.belongsTo(models.MatchSchedule, {
-    foreignKey: 'matchScheduleId',
-    as: 'matchSchedule'
-  });
-};
 
 module.exports = Prediction;

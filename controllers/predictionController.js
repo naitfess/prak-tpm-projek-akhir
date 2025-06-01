@@ -11,8 +11,12 @@ class PredictionController {
   // Create prediction
   static async createPrediction(req, res) {
     try {
+      console.log('Create prediction request body:', req.body);
+      console.log('User from token:', req.user);
+
       const { error } = predictionSchema.validate(req.body);
       if (error) {
+        console.log('Validation error:', error.details[0].message);
         return res.status(400).json({
           success: false,
           message: error.details[0].message
@@ -22,8 +26,12 @@ class PredictionController {
       const { match_schedule_id, predicted_team_id } = req.body;
       const user_id = req.user.id;
 
+      console.log('Prediction params:', { match_schedule_id, predicted_team_id, user_id });
+
       // Check if match exists
       const match = await MatchSchedule.findByPk(match_schedule_id);
+      console.log('Match found:', match ? 'Yes' : 'No');
+      
       if (!match) {
         return res.status(404).json({
           success: false,
@@ -32,6 +40,7 @@ class PredictionController {
       }
 
       // Check if match is still upcoming (skor1 and skor2 both 0)
+      console.log('Match scores:', { skor1: match.skor1, skor2: match.skor2 });
       if (match.skor1 > 0 || match.skor2 > 0) {
         return res.status(400).json({
           success: false,
@@ -40,6 +49,7 @@ class PredictionController {
       }
 
       // Check if predicted team is valid for this match (allow 0 for draw)
+      console.log('Team validation:', { predicted_team_id, team1_id: match.team1_id, team2_id: match.team2_id });
       if (predicted_team_id !== 0 && predicted_team_id !== match.team1_id && predicted_team_id !== match.team2_id) {
         return res.status(400).json({
           success: false,
@@ -55,6 +65,7 @@ class PredictionController {
         }
       });
 
+      console.log('Existing prediction:', existingPrediction ? 'Found' : 'None');
       if (existingPrediction) {
         return res.status(400).json({
           success: false,
@@ -63,12 +74,15 @@ class PredictionController {
       }
 
       // Create prediction
+      console.log('Creating prediction...');
       const prediction = await Prediction.create({
         user_id,
         match_schedule_id,
         predicted_team_id,
         status: null
       });
+
+      console.log('Prediction created:', prediction.id);
 
       // Get prediction with associations
       const predictionWithDetails = await Prediction.findByPk(prediction.id, {
@@ -81,10 +95,12 @@ class PredictionController {
               { model: Team, as: 'team1', attributes: ['id', 'name'] },
               { model: Team, as: 'team2', attributes: ['id', 'name'] }
             ]
-          },
-          { model: Team, as: 'predictedTeam', attributes: ['id', 'name'] }
+          }
+          // Hapus include predictedTeam karena bisa null untuk predicted_team_id = 0
         ]
       });
+
+      console.log('Prediction with details retrieved');
 
       res.status(201).json({
         success: true,
@@ -93,6 +109,7 @@ class PredictionController {
       });
     } catch (error) {
       console.error('Error creating prediction:', error);
+      console.error('Error stack:', error.stack);
       res.status(500).json({
         success: false,
         message: 'Internal server error'
@@ -118,8 +135,8 @@ class PredictionController {
               { model: Team, as: 'team1', attributes: ['id', 'name'] },
               { model: Team, as: 'team2', attributes: ['id', 'name'] }
             ]
-          },
-          { model: Team, as: 'predictedTeam', attributes: ['id', 'name'] }
+          }
+          // Hapus include predictedTeam karena tidak ada association
         ],
         order: [['createdAt', 'DESC']],
         limit,
@@ -169,8 +186,8 @@ class PredictionController {
               { model: Team, as: 'team1', attributes: ['id', 'name'] },
               { model: Team, as: 'team2', attributes: ['id', 'name'] }
             ]
-          },
-          { model: Team, as: 'predictedTeam', attributes: ['id', 'name'] }
+          }
+          // Hapus include predictedTeam karena tidak ada association
         ],
         order: [['createdAt', 'DESC']],
         limit,
@@ -210,7 +227,7 @@ class PredictionController {
         });
       }
 
-      // Check if match is finished
+      // Check if match is finished (has scores and updated)
       if (match.skor1 === 0 && match.skor2 === 0) {
         return res.status(400).json({
           success: false,
@@ -220,11 +237,24 @@ class PredictionController {
 
       // Determine winner
       let winner_team_id = null;
+      let isDraw = false;
+      
       if (match.skor1 > match.skor2) {
         winner_team_id = match.team1_id;
       } else if (match.skor2 > match.skor1) {
         winner_team_id = match.team2_id;
+      } else {
+        // Skor sama = seri
+        isDraw = true;
+        winner_team_id = 0; // 0 represents draw
       }
+
+      console.log('Match result:', { 
+        skor1: match.skor1, 
+        skor2: match.skor2, 
+        winner_team_id, 
+        isDraw 
+      });
 
       // Get all predictions for this match
       const predictions = await Prediction.findAll({
@@ -238,10 +268,24 @@ class PredictionController {
         let status = false;
         let pointsToAdd = 0;
 
-        if (winner_team_id && prediction.predicted_team_id === winner_team_id) {
+        // Check if prediction matches result
+        if (isDraw && prediction.predicted_team_id === 0) {
+          // User predicted draw and it's a draw
+          status = true;
+          pointsToAdd = 10;
+        } else if (!isDraw && prediction.predicted_team_id === winner_team_id) {
+          // User predicted winning team correctly
           status = true;
           pointsToAdd = 10;
         }
+
+        console.log('Prediction check:', {
+          user_id: prediction.user_id,
+          predicted_team_id: prediction.predicted_team_id,
+          actual_result: isDraw ? 'draw' : `team_${winner_team_id}_wins`,
+          status,
+          pointsToAdd
+        });
 
         await prediction.update({ status });
 
@@ -267,6 +311,7 @@ class PredictionController {
         data: {
           match_id,
           winner_team_id,
+          isDraw,
           total_predictions: predictions.length,
           updates
         }

@@ -71,119 +71,75 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// Database connection and server start
-sequelize.authenticate()
-  .then(() => {
-    console.log('Database connected successfully');
-    
-    // Force require the Prediction model if it wasn't loaded
-    if (!sequelize.models.Prediction) {
-      console.log('Attempting to manually load Prediction model...');
-      try {
-        require('./models/prediction');
-        console.log('✓ Prediction model manually loaded');
-      } catch (err) {
-        console.error('✗ Failed to manually load Prediction model:', err.message);
-      }
-    }
-    
-    // Log all defined models
-    const definedModels = Object.keys(sequelize.models);
-    console.log('Defined models:', definedModels);
-    
-    // Expected models
-    const expectedModels = ['User', 'Team', 'MatchSchedule', 'News', 'Prediction'];
-    const missingModels = expectedModels.filter(model => !definedModels.includes(model));
-    
-    if (missingModels.length > 0) {
-      console.error('Missing models:', missingModels);
-      console.log('Please check if these model files exist and are properly exported');
-    } else {
-      console.log('✓ All expected models are loaded');
-    }
-    
-    // Drop all tables first to avoid foreign key conflicts in development
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Dropping all tables in development mode...');
-      return sequelize.drop();
-    }
-    return Promise.resolve();
-  })
-  .then(() => {
-    // Set up associations only if all required models exist
-    Object.keys(sequelize.models).forEach(modelName => {
-      if (sequelize.models[modelName].associate) {
-        try {
-          sequelize.models[modelName].associate(sequelize.models);
-          console.log(`✓ ${modelName} associations set up`);
-        } catch (err) {
-          console.error(`✗ Failed to set up ${modelName} associations:`, err.message);
-          console.log('This might be due to missing related models');
-        }
-      }
-    });
-    
-    // Sync models in correct order to handle dependencies
-    const syncOptions = process.env.NODE_ENV === 'production' 
-      ? { alter: true } 
-      : { force: true, logging: console.log };
-    
-    // Sync base tables first (no foreign keys)
-    console.log('Syncing base models...');
-    return Promise.all([
-      sequelize.models.User.sync(syncOptions),
-      sequelize.models.Team.sync(syncOptions),
-      sequelize.models.News.sync(syncOptions)
-    ]);
-  })
-  .then(() => {
-    // Sync models with foreign keys
-    console.log('Syncing models with dependencies...');
-    return sequelize.models.MatchSchedule.sync({ force: true, logging: console.log });
-  })
-  .then(() => {
-    // Finally sync Prediction model
-    if (sequelize.models.Prediction) {
-      console.log('Syncing Prediction model...');
-      return sequelize.models.Prediction.sync({ force: true, logging: console.log });
-    }
-    return Promise.resolve();
-  })
-  .then(() => {
-    console.log('Database synchronized');
-    
-    // Log created tables
-    return sequelize.getQueryInterface().showAllTables();
-  })
-  .then((tables) => {
-    console.log('Created tables:', tables);
-    
-    // Check for all expected tables (use lowercase names to match actual table names)
-    const expectedTables = ['users', 'teams', 'match_schedules', 'news', 'predictions'];
-    expectedTables.forEach(table => {
-      if (tables.includes(table)) {
-        console.log(`✓ ${table} table created successfully`);
-      } else {
-        console.error(`✗ ${table} table NOT created`);
-      }
-    });
-    
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-      console.log(`Health check available at: http://localhost:${PORT}/api/health`);
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`API docs available at: http://localhost:${PORT}/api-docs`);
-      }
-    });
-  })
-  .catch(err => {
-    console.error('Unable to connect to database:', err);
-    process.exit(1);
+// Alternative database configuration
+const createAlternativeSequelize = () => {
+  // Using in-memory SQLite as fallback
+  const { Sequelize } = require('sequelize');
+  return new Sequelize('sqlite::memory:', {
+    dialect: 'sqlite',
+    dialectModule: require('better-sqlite3'),
+    logging: false,
   });
+};
+
+// Test database connection
+async function testConnection() {
+  try {
+    await sequelize.authenticate();
+    console.log('✓ MySQL database connection established successfully.');
+    return true;
+  } catch (error) {
+    console.error('✗ Unable to connect to MySQL database:', error.message);
+    console.log('Make sure MySQL is running and database "api_tpm" exists');
+    return false;
+  }
+}
 
 // Sync database
-sequelize.sync({ force: false }).then(() => {
-  console.log('Database synced successfully');
-}).catch((error) => {
-  console.error('Error syncing database:', error);
-});
+async function syncDatabase() {
+  try {
+    // Disable foreign key checks untuk MySQL
+    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0;');
+    
+    // Hanya sync normal, tidak drop table lagi
+    await sequelize.sync({ force: false });
+    
+    // Re-enable foreign key checks
+    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1;');
+    
+    console.log('✓ Database synced successfully');
+    return true;
+  } catch (error) {
+    console.error('✗ Error syncing database:', error.message);
+    return false;
+  }
+}
+
+// Initialize database
+async function initializeDatabase() {
+  const connected = await testConnection();
+  if (!connected) {
+    console.log('Retrying with alternative database configuration...');
+    return false;
+  }
+  
+  const synced = await syncDatabase();
+  return synced;
+}
+
+// Start server
+async function startServer() {
+  const dbReady = await initializeDatabase();
+  
+  if (!dbReady) {
+    console.error('Failed to initialize database. Exiting...');
+    process.exit(1);
+  }
+  
+  app.listen(PORT, () => {
+    console.log(`✓ Server running on port ${PORT}`);
+    console.log(`✓ API Documentation: http://localhost:${PORT}/api-docs`);
+  });
+}
+
+startServer();

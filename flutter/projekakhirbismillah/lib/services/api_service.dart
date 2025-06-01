@@ -10,11 +10,32 @@ class ApiService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
-      print('Getting token from storage: $token'); // Debug log
+      print('Getting token from storage: ${token != null ? "${token.substring(0, 20)}..." : "null"}'); // Debug log
       return token;
     } catch (e) {
       print('Error getting token: $e');
       return null;
+    }
+  }
+
+  static Future<void> saveToken(String token) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final success = await prefs.setString('token', token);
+      print('Token save result: $success');
+      print('Token saved in ApiService: ${token.substring(0, 20)}...'); // Debug log
+      
+      // Immediate verification
+      await Future.delayed(Duration(milliseconds: 100));
+      final savedToken = prefs.getString('token');
+      print('Immediate verification - token in storage: ${savedToken?.substring(0, 20)}...'); // Debug log
+      
+      // Extra verification with different method
+      final keys = prefs.getKeys();
+      print('All SharedPreferences keys: $keys'); // Debug log
+      
+    } catch (e) {
+      print('Error saving token: $e');
     }
   }
 
@@ -26,7 +47,7 @@ class ApiService {
     
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
-      print('Adding Authorization header: Bearer ${token.substring(0, 20)}...'); // Debug log
+      print('Adding Authorization header'); // Debug log
     } else {
       print('No token found for headers'); // Debug log
     }
@@ -52,19 +73,43 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
-        headers: await getHeaders(),
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': username,
           'password': password,
         }),
       );
       
+      print('Login response status: ${response.statusCode}');
+      print('Login response body: ${response.body}');
+      
       if (response.statusCode == 200) {
-        return {'success': true, 'data': jsonDecode(response.body)};
+        final data = jsonDecode(response.body);
+        // Response: {success: true, message, token, user}
+        if (data['success'] == true && data['token'] != null) {
+          print('Token received from backend: ${data['token'].substring(0, 20)}...');
+          
+          // Save token dengan multiple methods
+          await saveToken(data['token']);
+          
+          // Alternative save method
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('backup_token', data['token']);
+          await prefs.setString('user_token', data['token']);
+          
+          print('Token saved with multiple keys');
+          
+          return {'success': true, 'data': data};
+        } else {
+          print('Login failed: no success field or token in response');
+          return {'success': false, 'error': 'No token received'};
+        }
       } else {
+        print('Login failed with status: ${response.statusCode}');
         return {'success': false, 'error': 'Login failed'};
       }
     } catch (e) {
+      print('Login error: $e');
       return {'success': false, 'error': e.toString()};
     }
   }

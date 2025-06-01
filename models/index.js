@@ -1,21 +1,29 @@
-const { Sequelize, DataTypes } = require('sequelize');
-const config = require('../config/database')[process.env.NODE_ENV || 'development'];
+const { sequelize } = require('../config/database');
 
-const sequelize = new Sequelize(config.database, config.username, config.password, config);
-
-const db = {};
-
-// Import models
-db.User = require('./user')(sequelize, DataTypes);
-db.Team = require('./team')(sequelize, DataTypes);
-db.MatchSchedule = require('./matchSchedule')(sequelize, DataTypes);
-db.News = require('./news')(sequelize, DataTypes);
+// Import all models directly (tidak dipanggil sebagai function)
+const User = require('./user');
+const Team = require('./team');
+const MatchSchedule = require('./matchSchedule');
+const News = require('./news');
+const Prediction = require('./prediction');
 
 // Define associations
-db.MatchSchedule.belongsTo(db.Team, { foreignKey: 'team1_id', as: 'team1' });
-db.MatchSchedule.belongsTo(db.Team, { foreignKey: 'team2_id', as: 'team2' });
+User.hasMany(Prediction, { foreignKey: 'user_id', as: 'predictions' });
+Prediction.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
+MatchSchedule.hasMany(Prediction, { foreignKey: 'match_schedule_id', as: 'predictions' });
+Prediction.belongsTo(MatchSchedule, { foreignKey: 'match_schedule_id', as: 'match' });
 
-module.exports = db;
+Team.hasMany(MatchSchedule, { foreignKey: 'team1_id', as: 'homeMatches' });
+Team.hasMany(MatchSchedule, { foreignKey: 'team2_id', as: 'awayMatches' });
+MatchSchedule.belongsTo(Team, { foreignKey: 'team1_id', as: 'team1' });
+MatchSchedule.belongsTo(Team, { foreignKey: 'team2_id', as: 'team2' });
+
+module.exports = {
+  sequelize,
+  User,
+  Team,
+  MatchSchedule,
+  News,
+  Prediction
+};

@@ -19,6 +19,8 @@ class AuthProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString('token');
     
+    print('Checking auth status, token: ${_token?.substring(0, 20)}...'); // Debug log
+    
     if (_token != null) {
       try {
         final response = await ApiService.getUserProfile();
@@ -42,26 +44,26 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final response = await ApiService.login(username, password);
+      print('Auth provider received response: $response');
       
       if (response['success'] == true) {
         final data = response['data'];
         _token = data['token'];
         _user = User.fromJson(data['user']);
         
+        // Double save token sebagai backup
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', _token!);
+        await prefs.setString('backup_token', _token!);
         
-        print('Token saved: $_token'); // Debug log
-        
-        // Verify token is saved
-        final savedToken = prefs.getString('token');
-        print('Token verified in storage: $savedToken'); // Debug log
+        print('Token saved in auth provider: ${_token!.substring(0, 20)}...');
         
         _isLoading = false;
         notifyListeners();
         return true;
       } else {
-        _errorMessage = response['message'] ?? 'Login failed';
+        _errorMessage = response['error'] ?? 'Login failed';
+        print('Login failed in auth provider: $_errorMessage');
       }
     } catch (e) {
       _errorMessage = 'Network error: $e';
