@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:hive/hive.dart';
+
 import '../../providers/news_provider.dart';
 import '../../models/news.dart';
 import 'add_news_screen.dart';
@@ -206,7 +208,7 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
                 ),
                 const SizedBox(height: 12),
                 FutureBuilder<List<Map<String, dynamic>>>(
-                  future: _loadComments(news.id),
+                  future: _loadCommentsFromHive(news.id),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const SizedBox();
@@ -290,7 +292,7 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
                                     ),
                                   );
                                   if (confirm == true) {
-                                    await _deleteComment(news.id, idx);
+                                    await _deleteCommentFromHive(news.id, idx);
                                     setState(() {});
                                   }
                                 },
@@ -310,27 +312,32 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
     );
   }
 
-  Future<List<Map<String, dynamic>>> _loadComments(int newsId) async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<List<Map<String, dynamic>>> _loadCommentsFromHive(int newsId) async {
+    // Ambil komentar dari Hive box 'commentsBox'
+    if (!Hive.isBoxOpen('commentsBox')) {
+      await Hive.openBox('commentsBox');
+    }
+    final box = Hive.box('commentsBox');
     final key = 'comments_$newsId';
-    final commentsString = prefs.getString(key);
-    if (commentsString != null) {
-      final List<dynamic> decoded = jsonDecode(commentsString);
-      return decoded.cast<Map<String, dynamic>>();
+    final List<dynamic>? stored = box.get(key);
+    if (stored != null && stored is List) {
+      return stored.map((e) => Map<String, dynamic>.from(e)).toList();
     }
     return [];
   }
 
-  Future<void> _deleteComment(int newsId, int index) async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<void> _deleteCommentFromHive(int newsId, int index) async {
+    if (!Hive.isBoxOpen('commentsBox')) {
+      await Hive.openBox('commentsBox');
+    }
+    final box = Hive.box('commentsBox');
     final key = 'comments_$newsId';
-    final commentsString = prefs.getString(key);
-    if (commentsString != null) {
-      final List<dynamic> decoded = jsonDecode(commentsString);
-      final comments = decoded.cast<Map<String, dynamic>>();
+    final List<dynamic>? stored = box.get(key);
+    if (stored != null && stored is List) {
+      final comments = stored.map((e) => Map<String, dynamic>.from(e)).toList();
       if (index >= 0 && index < comments.length) {
         comments.removeAt(index);
-        await prefs.setString(key, jsonEncode(comments));
+        await box.put(key, comments);
       }
     }
   }
