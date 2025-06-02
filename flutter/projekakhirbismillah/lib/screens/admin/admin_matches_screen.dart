@@ -113,6 +113,24 @@ class _AdminMatchesScreenState extends State<AdminMatchesScreen> {
                 Expanded(
                   child: Row(
                     children: [
+                      // Team 1 logo
+                      if (match.team1?.logoUrl != null &&
+                          match.team1!.logoUrl!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: ClipOval(
+                            child: Image.network(
+                              match.team1!.logoUrl!,
+                              height: 32,
+                              width: 32,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(Icons.sports_soccer,
+                                    size: 32, color: Colors.green);
+                              },
+                            ),
+                          ),
+                        ),
                       Expanded(
                         child: Text(
                           match.team1?.name ?? 'Team 1',
@@ -133,10 +151,34 @@ class _AdminMatchesScreenState extends State<AdminMatchesScreen> {
                             style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
-                          match.team2?.name ?? 'Team 2',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.right,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              match.team2?.name ?? 'Team 2',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.right,
+                            ),
+                            // Team 2 logo
+                            if (match.team2?.logoUrl != null &&
+                                match.team2!.logoUrl!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8.0),
+                                child: ClipOval(
+                                  child: Image.network(
+                                    match.team2!.logoUrl!,
+                                    height: 32,
+                                    width: 32,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(Icons.sports_soccer,
+                                          size: 32, color: Colors.green);
+                                    },
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ],

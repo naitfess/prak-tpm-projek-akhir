@@ -14,14 +14,17 @@ class UserMatchesScreen extends StatefulWidget {
 }
 
 class _UserMatchesScreenState extends State<UserMatchesScreen> {
+  int _selectedTab = 0; // 0: Ongoing, 1: Finished
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final matchProvider = Provider.of<MatchProvider>(context, listen: false);
-      final predictionProvider = Provider.of<PredictionProvider>(context, listen: false);
+      final predictionProvider =
+          Provider.of<PredictionProvider>(context, listen: false);
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
+
       matchProvider.loadMatches();
       predictionProvider.loadPredictions();
       // Refresh user data to get updated points
@@ -58,28 +61,122 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
           );
         }
 
-        return RefreshIndicator(
-          onRefresh: () async {
-            await matchProvider.loadMatches();
-            await predictionProvider.loadPredictions();
-            // Refresh auth to update points
-            final authProvider = Provider.of<AuthProvider>(context, listen: false);
-            await authProvider.checkAuthStatus();
-          },
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: matchProvider.matches.length,
-            itemBuilder: (context, index) {
-              final match = matchProvider.matches[index];
-              return _buildMatchCard(context, match, predictionProvider);
-            },
-          ),
+        // Pisahkan pertandingan yang sudah selesai dan sedang berjalan
+        final ongoingMatches =
+            matchProvider.matches.where((m) => !m.isFinished).toList();
+        final finishedMatches =
+            matchProvider.matches.where((m) => m.isFinished).toList();
+
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _selectedTab == 0
+                          ? null
+                          : () => setState(() => _selectedTab = 0),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _selectedTab == 0
+                            ? Colors.green[700]
+                            : Colors.grey[300],
+                        foregroundColor:
+                            _selectedTab == 0 ? Colors.white : Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: _selectedTab == 0 ? 4 : 0,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.event_available, size: 18),
+                          SizedBox(width: 6),
+                          Text('Upcoming Events'),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _selectedTab == 1
+                          ? null
+                          : () => setState(() => _selectedTab = 1),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _selectedTab == 1
+                            ? Colors.blue[700]
+                            : Colors.grey[300],
+                        foregroundColor:
+                            _selectedTab == 1 ? Colors.white : Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: _selectedTab == 1 ? 4 : 0,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.check_circle, size: 18),
+                          SizedBox(width: 6),
+                          Text('Finished Events'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  await matchProvider.loadMatches();
+                  await predictionProvider.loadPredictions();
+                  // Refresh auth to update points
+                  final authProvider =
+                      Provider.of<AuthProvider>(context, listen: false);
+                  await authProvider.checkAuthStatus();
+                },
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    if (_selectedTab == 0) ...[
+                      if (ongoingMatches.isNotEmpty) ...[
+                        ...ongoingMatches.map((match) => _buildMatchCard(
+                            context, match, predictionProvider)),
+                      ] else
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.only(top: 32),
+                            child: Text('No upcoming or ongoing matches.'),
+                          ),
+                        ),
+                    ] else ...[
+                      if (finishedMatches.isNotEmpty) ...[
+                        ...finishedMatches.map((match) => _buildMatchCard(
+                            context, match, predictionProvider)),
+                      ] else
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.only(top: 32),
+                            child: Text('No finished matches.'),
+                          ),
+                        ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
   }
 
-  Widget _buildMatchCard(BuildContext context, MatchSchedule match, PredictionProvider predictionProvider) {
+  Widget _buildMatchCard(BuildContext context, MatchSchedule match,
+      PredictionProvider predictionProvider) {
     final hasPredicted = predictionProvider.hasPredictedMatch(match.id);
     final userPrediction = predictionProvider.predictions
         .where((p) => p.matchScheduleId == match.id)
@@ -104,46 +201,55 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
     if (match.isFinished && userPrediction != null) {
       if (match.winner == 'Seri' && userPrediction.predictedTeamId == 0) {
         isCorrect = true;
-      } else if (userPrediction.predictedTeamId == (match.team1?.id ?? -1) && match.winner == (match.team1?.name ?? '')) {
+      } else if (userPrediction.predictedTeamId == (match.team1?.id ?? -1) &&
+          match.winner == (match.team1?.name ?? '')) {
         isCorrect = true;
-      } else if (userPrediction.predictedTeamId == (match.team2?.id ?? -1) && match.winner == (match.team2?.name ?? '')) {
+      } else if (userPrediction.predictedTeamId == (match.team2?.id ?? -1) &&
+          match.winner == (match.team2?.name ?? '')) {
         isCorrect = true;
       }
     }
 
     return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Match teams and scores
             Row(
               children: [
                 Expanded(
                   child: Column(
                     children: [
+                      if (match.team1?.logoUrl != null &&
+                          match.team1!.logoUrl!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6.0),
+                          child: ClipOval(
+                            child: Image.network(
+                              match.team1!.logoUrl!,
+                              height: 40,
+                              width: 40,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(Icons.sports_soccer,
+                                    size: 40, color: Colors.green);
+                              },
+                            ),
+                          ),
+                        ),
                       Text(
                         match.team1?.name ?? 'Team 1',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
+                          color: Colors.green,
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      if (match.team1?.logoUrl != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Image.network(
-                            match.team1!.logoUrl!,
-                            height: 40,
-                            width: 40,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(Icons.sports_soccer, size: 40, color: Colors.blue);
-                            },
-                          ),
-                        ),
                     ],
                   ),
                 ),
@@ -152,35 +258,35 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                   children: [
                     if (match.isFinished)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.green.shade100,
+                          color: Colors.green,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.green),
                         ),
                         child: Text(
                           '${match.skor1} - ${match.skor2}',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 24,
-                            color: Colors.green,
+                            color: Colors.white,
                           ),
                         ),
                       )
                     else
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade100,
+                          color: Colors.orange,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.blue),
                         ),
                         child: const Text(
                           'VS',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
-                            color: Colors.blue,
+                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -205,38 +311,45 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                 Expanded(
                   child: Column(
                     children: [
+                      if (match.team2?.logoUrl != null &&
+                          match.team2!.logoUrl!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6.0),
+                          child: ClipOval(
+                            child: Image.network(
+                              match.team2!.logoUrl!,
+                              height: 40,
+                              width: 40,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(Icons.sports_soccer,
+                                    size: 40, color: Colors.green);
+                              },
+                            ),
+                          ),
+                        ),
                       Text(
                         match.team2?.name ?? 'Team 2',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
+                          color: Colors.green,
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      if (match.team2?.logoUrl != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Image.network(
-                            match.team2!.logoUrl!,
-                            height: 40,
-                            width: 40,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(Icons.sports_soccer, size: 40, color: Colors.blue);
-                            },
-                          ),
-                        ),
                     ],
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Match status and prediction info
             if (match.isFinished) ...[
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.green,
                   borderRadius: BorderRadius.circular(8),
@@ -254,7 +367,8 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                 const SizedBox(height: 8),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: isCorrect ? Colors.blue : Colors.red,
                     borderRadius: BorderRadius.circular(8),
@@ -270,9 +384,7 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                         textAlign: TextAlign.center,
                       ),
                       Text(
-                        isCorrect
-                            ? '✓ Prediksi Benar!'
-                            : '✗ Prediksi Salah',
+                        isCorrect ? '✓ Prediksi Benar!' : '✗ Prediksi Salah',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -286,7 +398,8 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                 const SizedBox(height: 8),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.grey,
                     borderRadius: BorderRadius.circular(8),
@@ -304,7 +417,8 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
             ] else if (hasPredicted && userPrediction != null) ...[
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.orange,
                   borderRadius: BorderRadius.circular(8),
@@ -363,7 +477,9 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
             Text(
               'Status: ${match.status}',
               style: TextStyle(
-                color: match.status == 'Belum Dimainkan' ? Colors.orange : Colors.green,
+                color: match.status == 'Belum Dimainkan'
+                    ? Colors.orange
+                    : Colors.green,
                 fontWeight: FontWeight.bold,
               ),
             ),

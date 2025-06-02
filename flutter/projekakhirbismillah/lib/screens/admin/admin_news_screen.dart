@@ -60,14 +60,16 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
 
   Widget _buildNewsCard(BuildContext context, News news) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      margin: const EdgeInsets.only(bottom: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (news.imageUrl != null)
             ClipRRect(
               borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(8)),
+                  const BorderRadius.vertical(top: Radius.circular(18)),
               child: Image.network(
                 news.imageUrl!,
                 height: 200,
@@ -83,33 +85,59 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
               ),
             ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  news.title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    const Icon(Icons.sports_soccer,
+                        color: Colors.green, size: 22),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        news.title,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Text(
                   news.content,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: TextStyle(color: Colors.grey[700]),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '${news.date.day}/${news.date.month}/${news.date.year}',
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 12,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.green[100],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_today,
+                              size: 14, color: Colors.green),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${news.date.day}/${news.date.month}/${news.date.year}',
+                            style: TextStyle(
+                              color: Colors.green[800],
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     Row(
@@ -156,7 +184,6 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
                               final success =
                                   await newsProvider.deleteNews(news.id);
                               if (context.mounted) {
-                                // Tambahkan pengecekan ini
                                 if (success) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
@@ -194,15 +221,29 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
                         const Divider(),
                         const Text(
                           'Komentar Pengguna',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, color: Colors.green),
                         ),
                         const SizedBox(height: 8),
                         ...comments.asMap().entries.map((entry) {
                           final idx = entry.key;
                           final comment = entry.value;
                           return Card(
+                            color: Colors.green[50],
                             margin: const EdgeInsets.symmetric(vertical: 4),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: Colors.green[200],
+                                child: Text(
+                                  (comment['username'] ?? 'U')[0].toUpperCase(),
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
                               title: Text(comment['text']),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,7 +252,8 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
                                     'Oleh: ${comment['username'] ?? 'User'}',
                                     style: const TextStyle(
                                         fontSize: 13,
-                                        fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.green),
                                   ),
                                   Text(
                                     'Dibuat: ${DateTime.parse(comment['createdAt']).toLocal()}'

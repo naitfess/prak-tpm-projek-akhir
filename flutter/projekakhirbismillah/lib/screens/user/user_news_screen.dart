@@ -45,8 +45,11 @@ class _UserNewsScreenState extends State<UserNewsScreen> {
 
   Widget _buildNewsCard(BuildContext context, News news) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      margin: const EdgeInsets.only(bottom: 18),
       child: InkWell(
+        borderRadius: BorderRadius.circular(18),
         onTap: () {
           Navigator.push(
             context,
@@ -60,7 +63,8 @@ class _UserNewsScreenState extends State<UserNewsScreen> {
           children: [
             if (news.imageUrl != null)
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(18)),
                 child: Image.network(
                   news.imageUrl!,
                   height: 200,
@@ -76,36 +80,63 @@ class _UserNewsScreenState extends State<UserNewsScreen> {
                 ),
               ),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    news.title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    children: [
+                      const Icon(Icons.sports_soccer,
+                          color: Colors.green, size: 22),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          news.title,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Text(
                     news.content,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(color: Colors.grey[700]),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '${news.date.day}/${news.date.month}/${news.date.year}',
-                        style: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: 12,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today,
+                                size: 14, color: Colors.green),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${news.date.day}/${news.date.month}/${news.date.year}',
+                              style: TextStyle(
+                                color: Colors.green[800],
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios, size: 16),
+                      const Icon(Icons.arrow_forward_ios,
+                          size: 16, color: Colors.green),
                     ],
                   ),
                 ],

@@ -35,11 +35,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               if (index == 0) {
                 return _buildHeader();
               }
-              
+
               final user = predictionProvider.leaderboard[index - 1];
               final rank = index;
               final isCurrentUser = user.id == authProvider.user?.id;
-              
+
               return _buildLeaderboardItem(user, rank, isCurrentUser);
             },
           ),
@@ -54,11 +54,18 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.blue, Colors.blue.shade700],
+          colors: [Colors.green, Colors.green.shade700],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: const Column(
         children: [
@@ -91,8 +98,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   Widget _buildLeaderboardItem(User user, int rank, bool isCurrentUser) {
     return Card(
+      elevation: isCurrentUser ? 6 : 2,
       margin: const EdgeInsets.only(bottom: 8),
-      color: isCurrentUser ? Colors.blue.shade50 : null,
+      color: isCurrentUser ? Colors.green.shade50 : null,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: Container(
           width: 40,
@@ -100,6 +109,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           decoration: BoxDecoration(
             color: _getRankColor(rank),
             shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: _getRankColor(rank).withOpacity(0.3),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Center(
             child: Text(
@@ -117,6 +133,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               user.username,
               style: TextStyle(
                 fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.normal,
+                color: isCurrentUser ? Colors.green[900] : Colors.black,
               ),
             ),
             if (isCurrentUser) ...[
@@ -124,7 +141,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.blue,
+                  color: Colors.green,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
