@@ -6,7 +6,8 @@ import '../auth/login_screen.dart';
 import 'user_matches_screen.dart';
 import 'user_news_screen.dart';
 import 'leaderboard_screen.dart';
-import '../../../services/api_service.dart';
+import '../../services/api_service.dart'; // Fix path
+import '../../theme/app_colors.dart'; // Fix path
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({super.key});
@@ -52,30 +53,38 @@ class _UserDashboardState extends State<UserDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final Color bgColor = Colors.green[50]!;
-    final Color primaryGreen = Colors.green[700]!;
-
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         return Scaffold(
-          backgroundColor: bgColor,
+          backgroundColor: AppColors.backgroundLight,
           appBar: AppBar(
-            elevation: 4,
+            elevation: 2,
+            shadowColor: Colors.black12,
             title: Row(
               children: [
-                const Icon(Icons.sports_soccer, color: Colors.white, size: 28),
-                const SizedBox(width: 8),
-                Text(
-                  'Welcome, ${authProvider.user?.username ?? 'User'}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
+                Icon(Icons.sports_soccer,
+                    color: AppColors.textOnPrimary, size: 28),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Welcome back,',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textOnPrimary.withOpacity(0.9),
+                          ),
+                    ),
+                    Text(
+                      authProvider.user?.username ?? 'User',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: AppColors.textOnPrimary,
+                          ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            backgroundColor: primaryGreen,
-            foregroundColor: Colors.white,
+            backgroundColor: AppColors.primaryGreen,
             actions: [
               Padding(
                 padding: const EdgeInsets.only(right: 12.0),
@@ -129,13 +138,10 @@ class _UserDashboardState extends State<UserDashboard> {
               ),
             ],
           ),
-          body: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: _screens[_currentIndex],
-          ),
+          body: _screens[_currentIndex],
           bottomNavigationBar: BottomNavigationBar(
             backgroundColor: Colors.white,
-            selectedItemColor: primaryGreen,
+            selectedItemColor: AppColors.primaryGreen,
             unselectedItemColor: Colors.grey,
             selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
             currentIndex: _currentIndex,

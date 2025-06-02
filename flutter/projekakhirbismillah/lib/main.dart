@@ -11,6 +11,7 @@ import 'providers/prediction_provider.dart';
 import 'providers/leaderboard_provider.dart';
 import 'services/api_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,10 +34,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'Football Prediction App',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          useMaterial3: true,
-        ),
+        theme: AppTheme.lightTheme,
         home: const SplashScreen(),
         debugShowCheckedModeBanner: false,
       ),
@@ -62,8 +60,9 @@ class _SplashScreenState extends State<SplashScreen> {
     // Debug: Check token at startup
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    print('Token at startup: ${token != null ? "${token.substring(0, 20)}..." : "null"}');
-    
+    print(
+        'Token at startup: ${token != null ? "${token.substring(0, 20)}..." : "null"}');
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await authProvider.checkAuthStatus();
 

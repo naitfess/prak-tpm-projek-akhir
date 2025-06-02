@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/leaderboard_provider.dart';
 import '../../models/leaderboard_entry.dart';
+import '../../theme/app_colors.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -21,16 +22,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final Color bgColor = Colors.green[50]!;
-    final Color primaryGreen = Colors.green[700]!;
-
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
         title: const Text('Leaderboard'),
-        backgroundColor: primaryGreen,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: AppColors.primaryGreen,
+        foregroundColor: AppColors.textOnPrimary,
+        elevation: 2,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -43,8 +41,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       body: Consumer<LeaderboardProvider>(
         builder: (context, leaderboardProvider, child) {
           if (leaderboardProvider.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
+            return Center(
+              child: CircularProgressIndicator(color: AppColors.primaryGreen),
             );
           }
 
@@ -70,7 +68,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       leaderboardProvider.refreshAll();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryGreen,
+                      backgroundColor: AppColors.primaryGreen,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -84,6 +82,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           }
 
           return RefreshIndicator(
+            color: AppColors.primaryGreen,
             onRefresh: () => leaderboardProvider.refreshAll(),
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -205,6 +204,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   Widget _buildStatsCard(LeaderboardStats stats) {
     return Card(
       elevation: 4,
+      color: AppColors.cardBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -311,25 +311,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   }
 
   Widget _buildLeaderboardItem(LeaderboardEntry entry) {
-    Color rankColor = Colors.grey;
-    IconData? rankIcon;
-
-    if (entry.rank == 1) {
-      rankColor = Colors.amber;
-      rankIcon = Icons.emoji_events;
-    } else if (entry.rank == 2) {
-      rankColor = Colors.grey[400]!;
-      rankIcon = Icons.emoji_events;
-    } else if (entry.rank == 3) {
-      rankColor = Colors.brown;
-      rankIcon = Icons.emoji_events;
-    } else {
-      rankColor = Colors.green;
-    }
+    Color rankColor = AppColors.primaryGreen;
+    if (entry.rank == 1)
+      rankColor = AppColors.rankGold;
+    else if (entry.rank == 2)
+      rankColor = AppColors.rankSilver;
+    else if (entry.rank == 3) rankColor = AppColors.rankBronze;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       elevation: entry.rank <= 3 ? 6 : 2,
+      color: AppColors.cardBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: ListTile(
         leading: Container(
@@ -340,8 +332,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             shape: BoxShape.circle,
           ),
           child: Center(
-            child: entry.rank <= 3 && rankIcon != null
-                ? Icon(rankIcon, color: Colors.white, size: 20)
+            child: entry.rank <= 3
+                ? Icon(Icons.emoji_events, color: Colors.white, size: 20)
                 : Text(
                     '${entry.rank}',
                     style: const TextStyle(

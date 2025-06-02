@@ -5,6 +5,7 @@ import '../../providers/prediction_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/match_schedule.dart';
 import 'prediction_dialog.dart';
+import '../../theme/app_colors.dart';
 
 class UserMatchesScreen extends StatefulWidget {
   const UserMatchesScreen({super.key});
@@ -42,23 +43,20 @@ class _UserMatchesScreenState extends State<UserMatchesScreen>
 
   @override
   Widget build(BuildContext context) {
-    final Color bgColor = Colors.green[50]!;
-    final Color primaryGreen = Colors.green[700]!;
-
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: AppColors.backgroundLight,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(56),
         child: Container(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           child: SafeArea(
             child: Column(
               children: [
                 TabBar(
                   controller: _tabController,
-                  indicatorColor: primaryGreen,
-                  labelColor: primaryGreen,
-                  unselectedLabelColor: Colors.grey,
+                  indicatorColor: AppColors.primaryGreen,
+                  labelColor: AppColors.primaryGreen,
+                  unselectedLabelColor: AppColors.secondaryText,
                   labelStyle: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 16),
                   tabs: const [
@@ -67,7 +65,7 @@ class _UserMatchesScreenState extends State<UserMatchesScreen>
                     Tab(text: "Prediction History"),
                   ],
                 ),
-                const Divider(height: 1, thickness: 1),
+                Divider(height: 1, thickness: 1, color: AppColors.divider),
               ],
             ),
           ),
@@ -136,7 +134,7 @@ class _UserMatchesScreenState extends State<UserMatchesScreen>
   }) {
     final Color cardColor = showPredictionButton
         ? Colors.green[50]! // Upcoming: hijau muda
-        : Colors.white;     // Finished/history: putih/hijau muda
+        : Colors.white; // Finished/history: putih/hijau muda
 
     if (matches.isEmpty) {
       return Center(
@@ -215,12 +213,12 @@ class _UserMatchesScreenState extends State<UserMatchesScreen>
       }
     }
 
-    final Color effectiveCardColor = cardColor ??
-        (match.isFinished ? Colors.green[100]! : Colors.white);
+    final Color effectiveCardColor =
+        cardColor ?? (match.isFinished ? Colors.green[100]! : Colors.white);
 
     return Card(
       elevation: 5,
-      color: effectiveCardColor,
+      color: cardColor ?? AppColors.cardBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       margin: const EdgeInsets.only(bottom: 18),
       child: Padding(

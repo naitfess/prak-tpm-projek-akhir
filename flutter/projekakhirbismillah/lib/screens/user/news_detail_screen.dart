@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import '../../theme/app_colors.dart';
 
 class NewsDetailScreen extends StatefulWidget {
   final News news;
@@ -113,19 +114,22 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     final Color bgColor = Colors.green[50]!;
 
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
         elevation: 2,
+        backgroundColor: AppColors.primaryGreen,
+        foregroundColor: AppColors.textOnPrimary,
         title: Row(
           children: [
-            const Icon(Icons.newspaper, color: Colors.white, size: 26),
+            Icon(Icons.newspaper, color: AppColors.textOnPrimary, size: 26),
             const SizedBox(width: 8),
-            const Text('News Detail',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            Text('News Detail',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textOnPrimary,
+                )),
           ],
         ),
-        backgroundColor: Colors.green[700],
-        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -153,9 +157,9 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
               padding: const EdgeInsets.all(20.0),
               child: Card(
                 elevation: 5,
+                color: AppColors.cardBackground,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18)),
-                color: Colors.white,
                 child: Padding(
                   padding: const EdgeInsets.all(22.0),
                   child: Column(
