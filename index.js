@@ -22,7 +22,7 @@ modelFiles.forEach(modelFile => {
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const teamRoutes = require('./routes/teams');
-const matchScheduleRoutes = require('./routes/matchSchedules');
+const matchScheduleRoutes = require('./routes/matchScheduleRoutes'); // Fixed: was './routes/matchSchedules'
 const newsRoutes = require('./routes/news');
 const predictionRoutes = require('./routes/predictionRoutes');
 const leaderboardRoutes = require('./routes/leaderboardRoutes');
@@ -55,7 +55,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/teams', teamRoutes);
-app.use('/api/match-schedules', matchScheduleRoutes);
+app.use('/api/matches', matchScheduleRoutes); // Changed from /api/match-schedules to /api/matches
 app.use('/api/news', newsRoutes);
 app.use('/api/predictions', predictionRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
@@ -101,8 +101,131 @@ async function syncDatabase() {
     // Disable foreign key checks untuk MySQL
     await sequelize.query('SET FOREIGN_KEY_CHECKS = 0;');
     
-    // Hanya sync normal, tidak drop table lagi
-    await sequelize.sync({ force: false });
+    // First, let's check if the table exists and what columns it has
+    try {
+      const [results] = await sequelize.query(`
+        DESCRIBE match_schedules
+      `);
+      console.log('Current match_schedules table structure:', results);
+      
+      // Check if is_finished column exists
+      const hasIsFinished = results.some(column => column.Field === 'is_finished');
+      
+      if (!hasIsFinished) {
+        await sequelize.query(`
+          ALTER TABLE match_schedules 
+          ADD COLUMN is_finished BOOLEAN NOT NULL DEFAULT FALSE
+        `);
+        console.log('✓ Added is_finished column to match_schedules table');
+      } else {
+        console.log('✓ is_finished column already exists');
+      }
+    } catch (error) {
+      console.log('Error checking/adding is_finished column:', error.message);
+    }
+
+    // Fix foreign key constraints for predictions table
+    try {
+      // Drop existing foreign key constraints that might be wrong
+      await sequelize.query(`
+        SELECT CONSTRAINT_NAME 
+        FROM information_schema.KEY_COLUMN_USAGE 
+        WHERE TABLE_SCHEMA = 'api_tpm' 
+        AND TABLE_NAME = 'predictions' 
+        AND REFERENCED_TABLE_NAME LIKE '%match%'
+      `).then(async ([constraints]) => {
+        for (const constraint of constraints) {
+          try {
+            await sequelize.query(`
+              ALTER TABLE predictions DROP FOREIGN KEY ${constraint.CONSTRAINT_NAME}
+            `);
+            console.log(`✓ Dropped foreign key constraint: ${constraint.CONSTRAINT_NAME}`);
+          } catch (err) {
+            console.log(`Note: Could not drop constraint ${constraint.CONSTRAINT_NAME}:`, err.message);
+          }
+        }
+      });
+
+      // Add correct foreign key constraint
+      await sequelize.query(`
+        ALTER TABLE predictions 
+        ADD CONSTRAINT predictions_match_schedule_fk 
+        FOREIGN KEY (match_schedule_id) 
+        REFERENCES match_schedules(id) 
+        ON DELETE CASCADE ON UPDATE CASCADE
+      `);
+      console.log('✓ Added correct foreign key constraint for predictions');
+    } catch (error) {
+      console.log('Note: Foreign key constraint already exists or error:', error.message);
+    }
+
+    // Remove foreign key constraint on predicted_team_id to allow draw predictions (value = 0)
+    try {
+      // Force remove the specific constraint with the correct name
+      await sequelize.query(`
+        ALTER TABLE predictions DROP FOREIGN KEY predicted_team_id
+      `).catch(() => {
+        console.log('predicted_team_id constraint already removed or does not exist');
+      });
+
+      // Also try common variations
+      const constraintsToTry = [
+        'predicted_team_id',
+        'predictions_predicted_team_id_foreign',
+        'fk_predictions_predicted_team_id'
+      ];
+
+      for (const constraintName of constraintsToTry) {
+        await sequelize.query(`
+          ALTER TABLE predictions DROP FOREIGN KEY ${constraintName}
+        `).catch(() => {
+          console.log(`${constraintName} constraint not found`);
+        });
+      }
+
+      // Check if constraint still exists and force remove it
+      const [checkConstraints] = await sequelize.query(`
+        SELECT CONSTRAINT_NAME 
+        FROM information_schema.KEY_COLUMN_USAGE 
+        WHERE TABLE_SCHEMA = 'api_tpm' 
+        AND TABLE_NAME = 'predictions' 
+        AND COLUMN_NAME = 'predicted_team_id'
+        AND REFERENCED_TABLE_NAME = 'teams'
+      `);
+
+      console.log('Current predicted_team_id constraints:', checkConstraints);
+
+      for (const constraint of checkConstraints) {
+        await sequelize.query(`
+          ALTER TABLE predictions DROP FOREIGN KEY ${constraint.CONSTRAINT_NAME}
+        `).catch(err => {
+          console.log(`Could not remove ${constraint.CONSTRAINT_NAME}:`, err.message);
+        });
+      }
+
+      // Test if draw prediction works now
+      try {
+        await sequelize.query(`
+          INSERT INTO predictions (user_id, match_schedule_id, predicted_team_id, status, createdAt, updatedAt) 
+          VALUES (999, 1, 0, NULL, NOW(), NOW())
+        `);
+        console.log('✓ Draw prediction test successful');
+        
+        await sequelize.query(`
+          DELETE FROM predictions WHERE user_id = 999 AND predicted_team_id = 0
+        `);
+        console.log('✓ Test record cleaned up');
+      } catch (testError) {
+        console.log('Draw prediction test failed:', testError.message);
+      }
+
+      console.log('✓ Completed foreign key constraint removal for predicted_team_id');
+    } catch (error) {
+      console.log('Note: predicted_team_id constraint handling:', error.message);
+    }
+    
+    // Sync database with alter option to update existing tables
+    await sequelize.sync({ alter: true });
     
     // Re-enable foreign key checks
     await sequelize.query('SET FOREIGN_KEY_CHECKS = 1;');

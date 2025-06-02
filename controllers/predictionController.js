@@ -11,75 +11,65 @@ class PredictionController {
   // Create prediction
   static async createPrediction(req, res) {
     try {
-      // Debug logs for request
-      console.log('==== Create Prediction Debug ====');
-      console.log('Headers:', req.headers);
-      console.log('Auth token:', req.headers.authorization);
-      console.log('User data:', req.user);
-      console.log('Request body:', req.body);
-
-      const { error } = predictionSchema.validate(req.body);
-      if (error) {
-        console.log('Validation error:', error.details);
-        return res.status(400).json({
-          success: false,
-          message: error.details[0].message,
-          debug: { error: error.details }
-        });
-      }
-
       const { match_schedule_id, predicted_team_id } = req.body;
-      if (!req.user || !req.user.id) {
-        console.log('No user found in request');
-        return res.status(401).json({
-          success: false,
-          message: 'Authentication required',
-          debug: { user: req.user }
-        });
-      }
-
       const user_id = req.user.id;
 
-      // Match validation with detailed logging
-      const match = await MatchSchedule.findByPk(match_schedule_id);
-      console.log('Match found:', match);
-      
+      console.log('Creating prediction:', {
+        user_id,
+        match_schedule_id,
+        predicted_team_id,
+        predicted_team_id_type: typeof predicted_team_id
+      });
+
+      // Validation
+      if (!match_schedule_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Match schedule ID is required'
+        });
+      }
+
+      // Allow predicted_team_id to be 0 for draw, or positive integer for team selection
+      if (predicted_team_id !== 0 && (!predicted_team_id || predicted_team_id < 0)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid team selection'
+        });
+      }
+
+      // Check if match exists and is not finished
+      const match = await MatchSchedule.findByPk(match_schedule_id, {
+        include: [
+          { model: Team, as: 'team1' },
+          { model: Team, as: 'team2' }
+        ]
+      });
+
       if (!match) {
         return res.status(404).json({
           success: false,
-          message: 'Match not found',
-          debug: { match_schedule_id }
+          message: 'Match not found'
         });
       }
 
-      // Additional validations with logging
-      console.log('Match status:', {
-        skor1: match.skor1,
-        skor2: match.skor2,
-        team1_id: match.team1_id,
-        team2_id: match.team2_id,
-        predicted_team_id
-      });
-
-      // Check if match is still upcoming (skor1 and skor2 both 0)
-      console.log('Match scores:', { skor1: match.skor1, skor2: match.skor2 });
-      if (match.skor1 > 0 || match.skor2 > 0) {
+      if (match.is_finished) {
         return res.status(400).json({
           success: false,
           message: 'Cannot predict on finished match'
         });
       }
 
-      // Check if predicted team is valid for this match (allow 0 for draw)
-      console.log('Team validation:', { predicted_team_id, team1_id: match.team1_id, team2_id: match.team2_id });
-      if (predicted_team_id !== 0 && predicted_team_id !== match.team1_id && predicted_team_id !== match.team2_id) {
-        return res.status(400).json({
-          success: false,
-          message: 'Predicted team must be one of the teams in the match or 0 for draw'
-        });
+      // Validate team selection (only if not draw)
+      if (predicted_team_id !== 0) {
+        if (predicted_team_id !== match.team1_id && predicted_team_id !== match.team2_id) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid team selection for this match'
+          });
+        }
       }
 
-      // Check if user already has prediction for this match
+      // Check if user already made a prediction for this match
       const existingPrediction = await Prediction.findOne({
         where: {
           user_id,
@@ -87,16 +77,23 @@ class PredictionController {
         }
       });
 
-      console.log('Existing prediction:', existingPrediction ? 'Found' : 'None');
       if (existingPrediction) {
-        return res.status(400).json({
-          success: false,
-          message: 'You have already made a prediction for this match'
+        // Update existing prediction
+        await existingPrediction.update({
+          predicted_team_id,
+          status: null // Reset status since match result might change
+        });
+
+        console.log('Updated existing prediction:', existingPrediction.toJSON());
+
+        return res.json({
+          success: true,
+          message: 'Prediction updated successfully',
+          data: existingPrediction
         });
       }
 
-      // Create prediction
-      console.log('Creating prediction...');
+      // Create new prediction
       const prediction = await Prediction.create({
         user_id,
         match_schedule_id,
@@ -104,49 +101,19 @@ class PredictionController {
         status: null
       });
 
-      // After successful creation
-      console.log('Prediction created successfully:', {
-        user_id,
-        match_schedule_id,
-        predicted_team_id,
-        prediction_id: prediction.id
-      });
-
-      // Get prediction with associations
-      const predictionWithDetails = await Prediction.findByPk(prediction.id, {
-        include: [
-          { model: User, as: 'user', attributes: ['id', 'username'] },
-          { 
-            model: MatchSchedule, 
-            as: 'match', 
-            include: [
-              { model: Team, as: 'team1', attributes: ['id', 'name'] },
-              { model: Team, as: 'team2', attributes: ['id', 'name'] }
-            ]
-          }
-          // Hapus include predictedTeam karena bisa null untuk predicted_team_id = 0
-        ]
-      });
-
-      console.log('Prediction with details retrieved');
+      console.log('Created new prediction:', prediction.toJSON());
 
       res.status(201).json({
         success: true,
         message: 'Prediction created successfully',
-        data: predictionWithDetails
+        data: prediction
       });
     } catch (error) {
-      console.error('Prediction creation error:', {
-        message: error.message,
-        stack: error.stack,
-        user: req?.user?.id,
-        body: req.body
-      });
-      
+      console.error('Error creating prediction:', error);
       res.status(500).json({
         success: false,
         message: 'Internal server error',
-        debug: process.env.NODE_ENV === 'development' ? error.message : undefined
+        debug: error.message
       });
     }
   }
@@ -261,11 +228,11 @@ class PredictionController {
         });
       }
 
-      // Check if match is finished (has scores and updated)
-      if (match.skor1 === 0 && match.skor2 === 0) {
+      // Check if match is finished
+      if (!match.is_finished || (match.skor1 === 0 && match.skor2 === 0)) {
         return res.status(400).json({
           success: false,
-          message: 'Match is not finished yet'
+          message: 'Match is not finished yet or has no score'
         });
       }
 
@@ -278,17 +245,9 @@ class PredictionController {
       } else if (match.skor2 > match.skor1) {
         winner_team_id = match.team2_id;
       } else {
-        // Skor sama = seri
         isDraw = true;
-        winner_team_id = 0; // 0 represents draw
+        winner_team_id = 0;
       }
-
-      console.log('Match result:', { 
-        skor1: match.skor1, 
-        skor2: match.skor2, 
-        winner_team_id, 
-        isDraw 
-      });
 
       // Get all predictions for this match
       const predictions = await Prediction.findAll({
@@ -302,32 +261,22 @@ class PredictionController {
         let status = false;
         let pointsToAdd = 0;
 
-        // Check if prediction matches result
         if (isDraw && prediction.predicted_team_id === 0) {
-          // User predicted draw and it's a draw
           status = true;
           pointsToAdd = 10;
         } else if (!isDraw && prediction.predicted_team_id === winner_team_id) {
-          // User predicted winning team correctly
           status = true;
           pointsToAdd = 10;
         }
 
-        console.log('Prediction check:', {
-          user_id: prediction.user_id,
-          predicted_team_id: prediction.predicted_team_id,
-          actual_result: isDraw ? 'draw' : `team_${winner_team_id}_wins`,
-          status,
-          pointsToAdd
-        });
-
         await prediction.update({ status });
 
         if (pointsToAdd > 0) {
-          await User.increment('poin', {
-            by: pointsToAdd,
-            where: { id: prediction.user_id }
-          });
+          const user = await User.findByPk(prediction.user_id);
+          if (user) {
+            const newPoints = user.poin + pointsToAdd;
+            await user.update({ poin: newPoints });
+          }
         }
 
         updates.push({

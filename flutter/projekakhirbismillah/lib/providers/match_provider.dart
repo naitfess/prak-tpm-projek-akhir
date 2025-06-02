@@ -25,10 +25,24 @@ class MatchProvider with ChangeNotifier {
 
       if (response['success'] == true && response['data'] != null) {
         final data = response['data'];
-        // Handle nested success response
+        // Handle direct data array or nested success response
         if (data['success'] == true && data['data'] is List) {
+          // Nested response structure
           try {
             _matches = (data['data'] as List).map((json) {
+              print('Processing match: $json'); // Debug log
+              return MatchSchedule.fromJson(json);
+            }).toList();
+            print('Parsed ${_matches.length} matches'); // Debug log
+          } catch (parseError) {
+            print('Parse error: $parseError'); // Debug log
+            _errorMessage = 'Error parsing match data: $parseError';
+            _matches = [];
+          }
+        } else if (data is List) {
+          // Direct array response
+          try {
+            _matches = (data as List).map((json) {
               print('Processing match: $json'); // Debug log
               return MatchSchedule.fromJson(json);
             }).toList();
@@ -45,7 +59,7 @@ class MatchProvider with ChangeNotifier {
         }
       } else {
         print('Invalid response: $response'); // Debug log
-        _errorMessage = response['message'] ?? 'Failed to load matches';
+        _errorMessage = response['message'] ?? response['error'] ?? 'Failed to load matches';
         _matches = [];
       }
     } catch (e) {

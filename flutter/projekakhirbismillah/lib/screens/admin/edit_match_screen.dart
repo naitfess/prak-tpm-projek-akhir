@@ -97,8 +97,8 @@ class _EditMatchScreenState extends State<EditMatchScreen> {
                           const SizedBox(height: 8),
                           Text(
                             widget.match.isFinished 
-                                ? 'Match is finished. Current result: ${widget.match.winner}'
-                                : 'Match is scheduled. Enter scores to finish the match.',
+                                ? 'Match is finished. Current result: ${widget.match.result}'
+                                : 'Match is upcoming. Enter scores to finish the match.',
                             textAlign: TextAlign.center,
                             style: TextStyle(color: Colors.blue.shade700),
                           ),

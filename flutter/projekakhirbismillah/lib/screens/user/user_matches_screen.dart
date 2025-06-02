@@ -67,108 +67,42 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
         final finishedMatches =
             matchProvider.matches.where((m) => m.isFinished).toList();
 
-        return Column(
+        return ListView(
+          padding: const EdgeInsets.all(16),
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _selectedTab == 0
-                          ? null
-                          : () => setState(() => _selectedTab = 0),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _selectedTab == 0
-                            ? Colors.green[700]
-                            : Colors.grey[300],
-                        foregroundColor:
-                            _selectedTab == 0 ? Colors.white : Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: _selectedTab == 0 ? 4 : 0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.event_available, size: 18),
-                          SizedBox(width: 6),
-                          Text('Upcoming Events'),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _selectedTab == 1
-                          ? null
-                          : () => setState(() => _selectedTab = 1),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _selectedTab == 1
-                            ? Colors.blue[700]
-                            : Colors.grey[300],
-                        foregroundColor:
-                            _selectedTab == 1 ? Colors.white : Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: _selectedTab == 1 ? 4 : 0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.check_circle, size: 18),
-                          SizedBox(width: 6),
-                          Text('Finished Events'),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  await matchProvider.loadMatches();
-                  await predictionProvider.loadPredictions();
-                  // Refresh auth to update points
-                  final authProvider =
-                      Provider.of<AuthProvider>(context, listen: false);
-                  await authProvider.checkAuthStatus();
-                },
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    if (_selectedTab == 0) ...[
-                      if (ongoingMatches.isNotEmpty) ...[
-                        ...ongoingMatches.map((match) => _buildMatchCard(
-                            context, match, predictionProvider)),
-                      ] else
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.only(top: 32),
-                            child: Text('No upcoming or ongoing matches.'),
-                          ),
-                        ),
-                    ] else ...[
-                      if (finishedMatches.isNotEmpty) ...[
-                        ...finishedMatches.map((match) => _buildMatchCard(
-                            context, match, predictionProvider)),
-                      ] else
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.only(top: 32),
-                            child: Text('No finished matches.'),
-                          ),
-                        ),
-                    ],
-                  ],
+            if (ongoingMatches.isNotEmpty) ...[
+              const Text(
+                'Pertandingan Mendatang',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
                 ),
               ),
-            ),
+              const SizedBox(height: 12),
+              ...ongoingMatches.map((match) => _buildMatchCard(
+                context, 
+                match, 
+                predictionProvider,
+              )),
+              const SizedBox(height: 24),
+            ],
+            if (finishedMatches.isNotEmpty) ...[
+              const Text(
+                'Pertandingan Selesai',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...finishedMatches.map((match) => _buildMatchCard(
+                context, 
+                match, 
+                predictionProvider,
+              )),
+            ],
           ],
         );
       },

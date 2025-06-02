@@ -8,6 +8,7 @@ import 'providers/auth_provider.dart';
 import 'providers/match_provider.dart';
 import 'providers/news_provider.dart';
 import 'providers/prediction_provider.dart';
+import 'providers/leaderboard_provider.dart';
 import 'services/api_service.dart';
 
 void main() async {
@@ -26,6 +27,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => MatchProvider()),
         ChangeNotifierProvider(create: (_) => NewsProvider()),
         ChangeNotifierProvider(create: (_) => PredictionProvider()),
+        ChangeNotifierProvider(create: (_) => LeaderboardProvider()),
       ],
       child: MaterialApp(
         title: 'Football Prediction App',

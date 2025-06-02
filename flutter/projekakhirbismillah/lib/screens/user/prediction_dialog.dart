@@ -194,58 +194,69 @@ class _PredictionDialogState extends State<PredictionDialog> {
     // Validate predicted_team_id logic
     if (_selectedOption == 'team1' && _selectedTeamId != widget.match.team1?.id) {
       print('ERROR: Team1 selection mismatch!');
+      return;
     } else if (_selectedOption == 'team2' && _selectedTeamId != widget.match.team2?.id) {
       print('ERROR: Team2 selection mismatch!');
+      return;
     } else if (_selectedOption == 'draw' && _selectedTeamId != 0) {
       print('ERROR: Draw selection should be 0!');
-    } else {
-      print('✓ Prediction logic is correct');
+      return;
     }
+    print('Validation passed!');
     print('============================');
     
     // Check token availability
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     
-    if (token == null) {
+    if (token == null || token.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Session expired. Please login again.'),
+          content: Text('Please login to make predictions'),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
     
-    setState(() => _isLoading = true);
-
-    final predictionProvider = Provider.of<PredictionProvider>(context, listen: false);
+    setState(() {
+      _isLoading = true;
+    });
     
-    final success = await predictionProvider.createPrediction(
-      widget.match.id,
-      _selectedTeamId!,
-    );
-
-    setState(() => _isLoading = false);
-
-    if (!mounted) return;
-    Navigator.pop(context);
-    
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Prediksi "$predictionType" berhasil disimpan!'),
-          backgroundColor: Colors.green,
-        ),
+    try {
+      final predictionProvider = Provider.of<PredictionProvider>(context, listen: false);
+      final success = await predictionProvider.createPrediction(
+        widget.match.id, 
+        _selectedTeamId!,
       );
-    } else {
-      final errorMsg = predictionProvider.errorMessage ?? 'Gagal menyimpan prediksi';
+      
+      if (success) {
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Prediction saved: $predictionType'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(predictionProvider.errorMessage ?? 'Failed to save prediction'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(errorMsg),
+          content: Text('Error: $e'),
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 

@@ -221,9 +221,12 @@ class ApiService {
   static Future<Map<String, dynamic>> getMatchSchedules() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/match-schedules'),
+        Uri.parse('$baseUrl/matches'), // Changed from match-schedules to matches
         headers: await getHeaders(),
       );
+
+      print('Match API Response Status: ${response.statusCode}');
+      print('Match API Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         return {'success': true, 'data': jsonDecode(response.body)};
@@ -231,6 +234,7 @@ class ApiService {
         return {'success': false, 'error': 'Failed to load matches'};
       }
     } catch (e) {
+      print('Error in getMatchSchedules: $e');
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -239,7 +243,7 @@ class ApiService {
       Map<String, dynamic> data) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/match-schedules'),
+        Uri.parse('$baseUrl/matches'), // Changed endpoint
         headers: await getHeaders(),
         body: jsonEncode(data),
       );
@@ -258,7 +262,7 @@ class ApiService {
       int id, Map<String, dynamic> data) async {
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/match-schedules/$id'),
+        Uri.parse('$baseUrl/matches/$id'), // Changed endpoint
         headers: await getHeaders(),
         body: jsonEncode(data),
       );
@@ -267,6 +271,24 @@ class ApiService {
         return {'success': true, 'data': jsonDecode(response.body)};
       } else {
         return {'success': false, 'error': 'Failed to update match'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  // Add finish match endpoint
+  static Future<Map<String, dynamic>> finishMatch(int matchId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/matches/$matchId/finish'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': jsonDecode(response.body)};
+      } else {
+        return {'success': false, 'error': 'Failed to finish match'};
       }
     } catch (e) {
       return {'success': false, 'error': e.toString()};
@@ -403,7 +425,7 @@ class ApiService {
     }
   }
 
-  // Leaderboard endpoint
+  // Leaderboard endpoints
   static Future<Map<String, dynamic>> getLeaderboard() async {
     try {
       final response = await http.get(
@@ -411,10 +433,48 @@ class ApiService {
         headers: await getHeaders(),
       );
 
+      print('Leaderboard API Response Status: ${response.statusCode}');
+      print('Leaderboard API Response Body: ${response.body}');
+
       if (response.statusCode == 200) {
         return {'success': true, 'data': jsonDecode(response.body)};
       } else {
         return {'success': false, 'error': 'Failed to load leaderboard'};
+      }
+    } catch (e) {
+      print('Error in getLeaderboard: $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> getUserRank() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/leaderboard/my-rank'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': jsonDecode(response.body)};
+      } else {
+        return {'success': false, 'error': 'Failed to load user rank'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> getLeaderboardStats() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/leaderboard/stats'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': jsonDecode(response.body)};
+      } else {
+        return {'success': false, 'error': 'Failed to load leaderboard stats'};
       }
     } catch (e) {
       return {'success': false, 'error': e.toString()};

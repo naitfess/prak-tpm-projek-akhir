@@ -12,7 +12,7 @@ const Prediction = sequelize.define('Prediction', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'Users',
+      model: 'users', // Make sure this matches your users table name
       key: 'id'
     }
   },
@@ -20,14 +20,17 @@ const Prediction = sequelize.define('Prediction', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'MatchSchedules',
+      model: 'match_schedules', // Fix: was probably 'matchschedules'
       key: 'id'
     }
   },
   predicted_team_id: {
     type: DataTypes.INTEGER,
-    allowNull: false
-    // Hapus references constraint untuk allow 0 (draw prediction)
+    allowNull: false,
+    defaultValue: 0, // Allow 0 for draw, positive integers for team IDs
+    validate: {
+      min: 0
+    }
   },
   status: {
     type: DataTypes.BOOLEAN,

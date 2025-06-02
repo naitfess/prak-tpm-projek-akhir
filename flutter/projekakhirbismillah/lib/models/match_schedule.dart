@@ -8,6 +8,7 @@ class MatchSchedule {
   final String time;
   final int? skor1;
   final int? skor2;
+  final bool isFinished; // Add this field
   final DateTime createdAt;
   final DateTime updatedAt;
   final Team? team1;
@@ -21,6 +22,7 @@ class MatchSchedule {
     required this.time,
     this.skor1,
     this.skor2,
+    required this.isFinished, // Add this field
     required this.createdAt,
     required this.updatedAt,
     this.team1,
@@ -36,8 +38,9 @@ class MatchSchedule {
           ? DateTime.parse(json['date'])
           : DateTime.now(),
       time: json['time'] ?? '00:00',
-      skor1: json['skor1'],
-      skor2: json['skor2'],
+      skor1: json['skor1'] ?? 0,
+      skor2: json['skor2'] ?? 0,
+      isFinished: json['is_finished'] ?? false, // Add this field
       createdAt: json['createdAt'] is String
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
@@ -58,33 +61,26 @@ class MatchSchedule {
       'time': time,
       'skor1': skor1,
       'skor2': skor2,
+      'is_finished': isFinished, // Add this field
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
   }
 
-  bool get isBaru => skor1 == 0 && skor2 == 0 && createdAt == updatedAt;
-
-  bool get isFinished {
-    // Jika skor sudah diupdate (updatedAt != createdAt) atau skor tidak 0-0, anggap sudah selesai
-    if (isBaru) return false;
-    return true;
-  }
-
   String get status {
-    if (isBaru) return 'Belum Dimainkan';
+    if (!isFinished) return 'Belum Dimainkan';
     return 'Selesai';
   }
   
   String get winner {
-    if (skor1 == 0 && skor2 == 0) return 'Belum Dimainkan';
+    if (!isFinished) return 'Belum Dimainkan';
     if (skor1! > skor2!) return team1?.name ?? 'Team 1';
     if (skor2! > skor1!) return team2?.name ?? 'Team 2';
     return 'Seri';
   }
 
   String get result {
-    if (skor1 == null || skor2 == null) {
+    if (!isFinished || skor1 == null || skor2 == null) {
       return 'vs';
     }
     return '$skor1 - $skor2';

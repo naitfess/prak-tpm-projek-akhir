@@ -34,14 +34,21 @@ const MatchSchedule = sequelize.define('MatchSchedule', {
   },
   skor1: {
     type: DataTypes.INTEGER,
+    allowNull: false,
     defaultValue: 0
   },
   skor2: {
     type: DataTypes.INTEGER,
+    allowNull: false,
     defaultValue: 0
+  },
+  is_finished: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   }
 }, {
-  tableName: 'matchschedules',
+  tableName: 'match_schedules',
   timestamps: true
 });
 
