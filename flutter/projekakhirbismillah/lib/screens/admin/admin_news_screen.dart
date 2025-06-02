@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/news_provider.dart';
 import '../../models/news.dart';
 import 'add_news_screen.dart';
+import 'edit_news_screen.dart'; // Tambahkan import ini
 
 class AdminNewsScreen extends StatefulWidget {
   const AdminNewsScreen({super.key});
@@ -63,7 +64,8 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
         children: [
           if (news.imageUrl != null)
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(8)),
               child: Image.network(
                 news.imageUrl!,
                 height: 200,
@@ -108,7 +110,69 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
                         fontSize: 12,
                       ),
                     ),
-                    const Icon(Icons.edit, color: Colors.blue),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => EditNewsScreen(news: news),
+                              ),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Delete News'),
+                                content: const Text(
+                                    'Are you sure you want to delete this news?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text('Delete',
+                                        style: TextStyle(color: Colors.red)),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirm == true) {
+                              final newsProvider = Provider.of<NewsProvider>(
+                                  context,
+                                  listen: false);
+                              final success =
+                                  await newsProvider.deleteNews(news.id);
+                              if (context.mounted) {
+                                // Tambahkan pengecekan ini
+                                if (success) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content:
+                                            Text('News deleted successfully')),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Failed to delete news')),
+                                  );
+                                }
+                              }
+                            }
+                          },
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ],

@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/news_provider.dart';
+import '../../models/news.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
-class AddNewsScreen extends StatefulWidget {
-  const AddNewsScreen({super.key});
+class EditNewsScreen extends StatefulWidget {
+  final News news;
+  const EditNewsScreen({super.key, required this.news});
 
   @override
-  State<AddNewsScreen> createState() => _AddNewsScreenState();
+  State<EditNewsScreen> createState() => _EditNewsScreenState();
 }
 
-class _AddNewsScreenState extends State<AddNewsScreen> {
+class _EditNewsScreenState extends State<EditNewsScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _contentController = TextEditingController();
-  final _imageUrlController = TextEditingController();
-  DateTime _selectedDate = DateTime.now();
+  late TextEditingController _titleController;
+  late TextEditingController _contentController;
+  late TextEditingController _imageUrlController;
+  late DateTime _selectedDate;
 
   File? _pickedImage;
   final ImagePicker _picker = ImagePicker();
@@ -32,6 +34,16 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.news.title);
+    _contentController = TextEditingController(text: widget.news.content);
+    _imageUrlController =
+        TextEditingController(text: widget.news.imageUrl ?? '');
+    _selectedDate = widget.news.date;
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
@@ -43,7 +55,7 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add News'),
+        title: const Text('Edit News'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
@@ -164,7 +176,6 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                         String? imageUrl;
                         if (_pickedImage != null) {
                           // TODO: Upload image to server or cloud storage, get the URL
-                          // For now, just show a warning
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                                 content: Text(
@@ -182,18 +193,19 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                           'date': _selectedDate.toIso8601String().split('T')[0],
                         };
 
-                        final success = await newsProvider.createNews(newsData);
+                        final success = await newsProvider.updateNews(
+                            widget.news.id, newsData);
 
                         if (success) {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                                content: Text('News created successfully')),
+                                content: Text('News updated successfully')),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                                content: Text('Failed to create news')),
+                                content: Text('Failed to update news')),
                           );
                         }
                       }
@@ -203,7 +215,7 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Text('Create News'),
+                    child: const Text('Update News'),
                   ),
                 ),
               ],

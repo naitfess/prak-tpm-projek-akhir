@@ -51,6 +51,38 @@ class NewsProvider with ChangeNotifier {
     return false;
   }
 
+  Future<bool> updateNews(int id, Map<String, dynamic> newsData) async {
+    try {
+      final response = await ApiService.updateNews(id, newsData);
+      if (response['success']) {
+        await loadNews();
+        return true;
+      } else {
+        _errorMessage = response['error'] ?? 'Failed to update news';
+      }
+    } catch (e) {
+      _errorMessage = 'Network error: $e';
+      print('Error updating news: $e');
+    }
+    return false;
+  }
+
+  Future<bool> deleteNews(int id) async {
+    try {
+      final response = await ApiService.deleteNews(id);
+      if (response['success']) {
+        await loadNews();
+        return true;
+      } else {
+        _errorMessage = response['error'] ?? 'Failed to delete news';
+      }
+    } catch (e) {
+      _errorMessage = 'Network error: $e';
+      print('Error deleting news: $e');
+    }
+    return false;
+  }
+
   void clearError() {
     _errorMessage = null;
     notifyListeners();

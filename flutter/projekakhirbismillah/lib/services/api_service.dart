@@ -310,6 +310,42 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> updateNews(
+      int id, Map<String, dynamic> data) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/news/$id'),
+        headers: await getHeaders(),
+        body: jsonEncode(data),
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': jsonDecode(response.body)};
+      } else {
+        return {'success': false, 'error': 'Failed to update news'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteNews(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/news/$id'),
+        headers: await getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': jsonDecode(response.body)};
+      } else {
+        return {'success': false, 'error': 'Failed to delete news'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
   // Predictions endpoints
   static Future<Map<String, dynamic>> getPredictions() async {
     final response = await http.get(
