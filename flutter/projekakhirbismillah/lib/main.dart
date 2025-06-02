@@ -10,10 +10,12 @@ import 'providers/news_provider.dart';
 import 'providers/prediction_provider.dart';
 import 'providers/leaderboard_provider.dart';
 import 'services/api_service.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  await Hive.initFlutter();
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {

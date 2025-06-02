@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class NewsDetailScreen extends StatefulWidget {
   final News news;
@@ -20,38 +22,51 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   final _commentController = TextEditingController();
   int? _currentUserId;
   String? _currentUsername;
+  Box? _commentsBox;
 
   @override
   void initState() {
     super.initState();
-    _loadUserAndComments();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _initHive();
+      await _loadUser();
+      await _loadComments();
+    });
   }
 
-  Future<void> _loadUserAndComments() async {
+  Future<void> _initHive() async {
+    // Pastikan Hive sudah diinisialisasi di main.dart
+    if (!Hive.isBoxOpen('commentsBox')) {
+      _commentsBox = await Hive.openBox('commentsBox');
+    } else {
+      _commentsBox = Hive.box('commentsBox');
+    }
+  }
+
+  Future<void> _loadUser() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     setState(() {
       _currentUserId = authProvider.user?.id;
       _currentUsername = authProvider.user?.username;
     });
-    await _loadComments();
   }
 
   Future<void> _loadComments() async {
-    final prefs = await SharedPreferences.getInstance();
     final key = 'comments_${widget.news.id}';
-    final commentsString = prefs.getString(key);
-    if (commentsString != null) {
-      final List<dynamic> decoded = jsonDecode(commentsString);
-      setState(() {
-        _comments = decoded.cast<Map<String, dynamic>>();
-      });
-    }
+    if (_commentsBox == null) return;
+    final List<dynamic>? stored = _commentsBox!.get(key);
+    setState(() {
+      // Pastikan casting aman, jika null atau bukan List<Map> maka fallback ke []
+      _comments = (stored != null && stored is List)
+          ? stored.map((e) => Map<String, dynamic>.from(e)).toList()
+          : [];
+    });
   }
 
   Future<void> _saveComments() async {
-    final prefs = await SharedPreferences.getInstance();
     final key = 'comments_${widget.news.id}';
-    await prefs.setString(key, jsonEncode(_comments));
+    if (_commentsBox == null) return;
+    await _commentsBox!.put(key, _comments);
   }
 
   Future<void> _addComment(String text) async {
@@ -94,8 +109,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userId = authProvider.user?.id;
+    final userId = _currentUserId;
 
     return Scaffold(
       backgroundColor: Colors.green[50],
