@@ -29,7 +29,7 @@ const predictionRoutes = require('./routes/predictionRoutes');
 const leaderboardRoutes = require('./routes/leaderboardRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
 // Middleware
 app.use(cors());

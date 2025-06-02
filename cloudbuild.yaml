@@ -22,7 +22,7 @@ steps:
         "us-central1",
         "--allow-unauthenticated",
         "--set-env-vars",
-        "NODE_ENV=${_NODE_ENV},PORT=${_PORT},DB_HOST=${_DB_HOST},DB_NAME=${_DB_NAME},DB_PASS=${_DB_PASS},DB_USER=${_DB_USER},JWT_SECRET=${_JWT_SECRET},JWT_EXPIRES_IN=${_JWT_EXPIRES_IN}"
+        "NODE_ENV=${_NODE_ENV},DB_HOST=${_DB_HOST},DB_NAME=${_DB_NAME},DB_PASS=${_DB_PASS},DB_USER=${_DB_USER},JWT_SECRET=${_JWT_SECRET},JWT_EXPIRES_IN=${_JWT_EXPIRES_IN}"
       ]
 
 options:
