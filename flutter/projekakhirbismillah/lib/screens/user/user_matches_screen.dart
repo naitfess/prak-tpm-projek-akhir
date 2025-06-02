@@ -13,12 +13,14 @@ class UserMatchesScreen extends StatefulWidget {
   State<UserMatchesScreen> createState() => _UserMatchesScreenState();
 }
 
-class _UserMatchesScreenState extends State<UserMatchesScreen> {
-  int _selectedTab = 0; // 0: Ongoing, 1: Finished
+class _UserMatchesScreenState extends State<UserMatchesScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final matchProvider = Provider.of<MatchProvider>(context, listen: false);
       final predictionProvider =
@@ -33,84 +35,149 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer2<MatchProvider, PredictionProvider>(
-      builder: (context, matchProvider, predictionProvider, child) {
-        if (matchProvider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
-        if (matchProvider.matches.isEmpty) {
-          return const Center(
+  @override
+  Widget build(BuildContext context) {
+    final Color bgColor = Colors.green[50]!;
+    final Color primaryGreen = Colors.green[700]!;
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(56),
+        child: Container(
+          color: Colors.white,
+          child: SafeArea(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.sports_soccer, size: 64, color: Colors.grey),
-                SizedBox(height: 16),
-                Text(
-                  'No matches available',
-                  style: TextStyle(fontSize: 18, color: Colors.grey),
+                TabBar(
+                  controller: _tabController,
+                  indicatorColor: primaryGreen,
+                  labelColor: primaryGreen,
+                  unselectedLabelColor: Colors.grey,
+                  labelStyle: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16),
+                  tabs: const [
+                    Tab(text: "Upcoming"),
+                    Tab(text: "Finished"),
+                    Tab(text: "Prediction History"),
+                  ],
                 ),
-                SizedBox(height: 8),
-                Text(
-                  'Check back later for upcoming matches!',
-                  style: TextStyle(color: Colors.grey),
-                ),
+                const Divider(height: 1, thickness: 1),
               ],
             ),
+          ),
+        ),
+      ),
+      body: Consumer2<MatchProvider, PredictionProvider>(
+        builder: (context, matchProvider, predictionProvider, child) {
+          if (matchProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final matches = matchProvider.matches;
+          final predictions = predictionProvider.predictions;
+
+          final upcomingMatches = matches.where((m) => !m.isFinished).toList();
+          final finishedMatches = matches.where((m) => m.isFinished).toList();
+
+          // Prediction history: only matches where user has predicted
+          final predictedMatchIds =
+              predictions.map((p) => p.matchScheduleId).toSet();
+          final predictionHistory =
+              matches.where((m) => predictedMatchIds.contains(m.id)).toList();
+
+          return TabBarView(
+            controller: _tabController,
+            children: [
+              // Upcoming Matches
+              _buildMatchList(
+                context,
+                upcomingMatches,
+                predictionProvider,
+                emptyText: "No upcoming matches.",
+                showPredictionButton: true,
+              ),
+              // Finished Matches
+              _buildMatchList(
+                context,
+                finishedMatches,
+                predictionProvider,
+                emptyText: "No finished matches.",
+                showPredictionButton: false,
+              ),
+              // Prediction History
+              _buildMatchList(
+                context,
+                predictionHistory,
+                predictionProvider,
+                emptyText: "No prediction history.",
+                showPredictionButton: false,
+                onlyShowPredicted: true,
+              ),
+            ],
           );
-        }
+        },
+      ),
+    );
+  }
 
-        // Pisahkan pertandingan yang sudah selesai dan sedang berjalan
-        final ongoingMatches =
-            matchProvider.matches.where((m) => !m.isFinished).toList();
-        final finishedMatches =
-            matchProvider.matches.where((m) => m.isFinished).toList();
+  Widget _buildMatchList(
+    BuildContext context,
+    List<MatchSchedule> matches,
+    PredictionProvider predictionProvider, {
+    required String emptyText,
+    bool showPredictionButton = false,
+    bool onlyShowPredicted = false,
+  }) {
+    final Color cardColor = showPredictionButton
+        ? Colors.green[50]! // Upcoming: hijau muda
+        : Colors.white;     // Finished/history: putih/hijau muda
 
-        return ListView(
-          padding: const EdgeInsets.all(16),
+    if (matches.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (ongoingMatches.isNotEmpty) ...[
-              const Text(
-                'Pertandingan Mendatang',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ...ongoingMatches.map((match) => _buildMatchCard(
-                context, 
-                match, 
-                predictionProvider,
-              )),
-              const SizedBox(height: 24),
-            ],
-            if (finishedMatches.isNotEmpty) ...[
-              const Text(
-                'Pertandingan Selesai',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ...finishedMatches.map((match) => _buildMatchCard(
-                context, 
-                match, 
-                predictionProvider,
-              )),
-            ],
+            const Icon(Icons.sports_soccer, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              emptyText,
+              style: const TextStyle(fontSize: 18, color: Colors.grey),
+            ),
           ],
+        ),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: matches.length,
+      itemBuilder: (context, index) {
+        final match = matches[index];
+        return _buildMatchCard(
+          context,
+          match,
+          predictionProvider,
+          showPredictionButton: showPredictionButton,
+          onlyShowPredicted: onlyShowPredicted,
+          cardColor: cardColor,
         );
       },
     );
   }
 
-  Widget _buildMatchCard(BuildContext context, MatchSchedule match,
-      PredictionProvider predictionProvider) {
+  Widget _buildMatchCard(
+    BuildContext context,
+    MatchSchedule match,
+    PredictionProvider predictionProvider, {
+    bool showPredictionButton = false,
+    bool onlyShowPredicted = false,
+    Color? cardColor,
+  }) {
     final hasPredicted = predictionProvider.hasPredictedMatch(match.id);
     final userPrediction = predictionProvider.predictions
         .where((p) => p.matchScheduleId == match.id)
@@ -120,14 +187,18 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
           orElse: () => null,
         );
 
+    if (onlyShowPredicted && userPrediction == null) {
+      return const SizedBox.shrink();
+    }
+
     String? predictedText;
     if (userPrediction != null) {
       if (userPrediction.predictedTeamId == (match.team1?.id ?? -1)) {
-        predictedText = '${match.team1?.name ?? 'Tim 1'} Menang';
+        predictedText = '${match.team1?.name ?? 'Team 1'} Win';
       } else if (userPrediction.predictedTeamId == (match.team2?.id ?? -1)) {
-        predictedText = '${match.team2?.name ?? 'Tim 2'} Menang';
+        predictedText = '${match.team2?.name ?? 'Team 2'} Win';
       } else if (userPrediction.predictedTeamId == 0) {
-        predictedText = 'Seri';
+        predictedText = 'Draw';
       }
     }
 
@@ -144,12 +215,16 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
       }
     }
 
+    final Color effectiveCardColor = cardColor ??
+        (match.isFinished ? Colors.green[100]! : Colors.white);
+
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 5,
+      color: effectiveCardColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      margin: const EdgeInsets.only(bottom: 18),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -212,8 +287,15 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.orange,
+                          color: Colors.green[700],
                           borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.green.withOpacity(0.15),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: const Text(
                           'VS',
@@ -221,6 +303,7 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
                             color: Colors.white,
+                            letterSpacing: 2,
                           ),
                         ),
                       ),
@@ -277,8 +360,6 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
               ],
             ),
             const SizedBox(height: 16),
-
-            // Match status and prediction info
             if (match.isFinished) ...[
               Container(
                 width: double.infinity,
@@ -289,7 +370,7 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Hasil Akhir - Pemenang: ${match.winner}',
+                  'Final Result - Winner: ${match.winner}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -310,7 +391,7 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                   child: Column(
                     children: [
                       Text(
-                        'Prediksi Anda: $predictedText',
+                        'Your Prediction: $predictedText',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -318,7 +399,9 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                         textAlign: TextAlign.center,
                       ),
                       Text(
-                        isCorrect ? '✓ Prediksi Benar!' : '✗ Prediksi Salah',
+                        isCorrect
+                            ? '✓ Correct Prediction!'
+                            : '✗ Wrong Prediction',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -339,7 +422,7 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text(
-                    'Tidak ada prediksi untuk pertandingan ini',
+                    'No prediction for this match',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -360,7 +443,7 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                 child: Column(
                   children: [
                     const Text(
-                      'Prediksi Anda:',
+                      'Your Prediction:',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -377,7 +460,7 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const Text(
-                      'Menunggu hasil pertandingan...',
+                      'Waiting for match result...',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -387,7 +470,7 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                   ],
                 ),
               ),
-            ] else ...[
+            ] else if (showPredictionButton) ...[
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -398,12 +481,20 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: Colors.green[700],
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
                   ),
                   icon: const Icon(Icons.sports_soccer),
-                  label: const Text('Buat Prediksi'),
+                  label: const Text('Make Prediction'),
                 ),
               ),
             ],
@@ -420,7 +511,7 @@ class _UserMatchesScreenState extends State<UserMatchesScreen> {
             const SizedBox(height: 8),
             if (match.isFinished)
               Text(
-                'Pemenang: ${match.winner}',
+                'Winner: ${match.winner}',
                 style: const TextStyle(
                   color: Colors.blue,
                   fontWeight: FontWeight.bold,

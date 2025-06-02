@@ -41,14 +41,19 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Color primaryBlue = Colors.blue[700]!;
+    final Color bgColor = Colors.green[50]!;
+
     return Scaffold(
+      backgroundColor: bgColor,
       appBar: AppBar(
         title: const Text('Add News'),
-        backgroundColor: Colors.blue,
+        backgroundColor: primaryBlue,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -56,10 +61,14 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
               children: [
                 TextFormField(
                   controller: _titleController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Title',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.title),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    prefixIcon: const Icon(Icons.title),
+                    filled: true,
+                    fillColor: bgColor,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -68,13 +77,17 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 TextFormField(
                   controller: _contentController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Content',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.article),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    prefixIcon: const Icon(Icons.article),
+                    filled: true,
+                    fillColor: bgColor,
                   ),
                   maxLines: 8,
                   validator: (value) {
@@ -84,16 +97,20 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 Row(
                   children: [
                     Expanded(
                       child: TextFormField(
                         controller: _imageUrlController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Image URL (Optional)',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.image),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          prefixIcon: const Icon(Icons.image),
+                          filled: true,
+                          fillColor: bgColor,
                         ),
                         onChanged: (val) {
                           if (val.isNotEmpty && _pickedImage != null) {
@@ -132,7 +149,7 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                       height: 120,
                       errorBuilder: (c, e, s) =>
                           const Icon(Icons.broken_image)),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 ListTile(
                   title: const Text('Date'),
                   subtitle: Text(
@@ -199,11 +216,20 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
+                      backgroundColor: primaryBlue,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 2,
                     ),
-                    child: const Text('Create News'),
+                    child: const Text('Create News',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                        )),
                   ),
                 ),
               ],

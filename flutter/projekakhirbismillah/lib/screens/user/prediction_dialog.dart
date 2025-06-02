@@ -35,8 +35,12 @@ class _PredictionDialogState extends State<PredictionDialog> {
   Widget build(BuildContext context) {
     final team1 = widget.match.team1;
     final team2 = widget.match.team2;
-    
+    final Color bgColor = Colors.green[50]!;
+    final Color primaryGreen = Colors.green[700]!;
+
     return AlertDialog(
+      backgroundColor: bgColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       title: const Text(
         'Pilih Prediksi',
         style: TextStyle(fontWeight: FontWeight.bold),
@@ -55,8 +59,6 @@ class _PredictionDialogState extends State<PredictionDialog> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-            
-            // Tim 1 Menang
             _buildPredictionOption(
               title: '${team1?.name ?? 'Tim 1'} Menang',
               icon: Icons.sports_soccer,
@@ -65,13 +67,9 @@ class _PredictionDialogState extends State<PredictionDialog> {
               onTap: () => setState(() {
                 _selectedOption = 'team1';
                 _selectedTeamId = _getPredictedTeamId();
-                print('Selected Team 1 (${team1?.name}) - predicted_team_id: ${team1?.id}'); // Debug log
               }),
             ),
-            
             const SizedBox(height: 12),
-            
-            // Seri
             _buildPredictionOption(
               title: 'Hasil Seri',
               icon: Icons.handshake,
@@ -80,25 +78,19 @@ class _PredictionDialogState extends State<PredictionDialog> {
               onTap: () => setState(() {
                 _selectedOption = 'draw';
                 _selectedTeamId = _getPredictedTeamId();
-                print('Selected Draw - predicted_team_id: 0'); // Debug log
               }),
             ),
-            
             const SizedBox(height: 12),
-            
-            // Tim 2 Menang
             _buildPredictionOption(
               title: '${team2?.name ?? 'Tim 2'} Menang',
               icon: Icons.sports_soccer,
-              color: Colors.green,
+              color: primaryGreen,
               isSelected: _selectedOption == 'team2',
               onTap: () => setState(() {
                 _selectedOption = 'team2';
                 _selectedTeamId = _getPredictedTeamId();
-                print('Selected Team 2 (${team2?.name}) - predicted_team_id: ${team2?.id}'); // Debug log
               }),
             ),
-            
             if (_selectedOption != null) ...[
               const SizedBox(height: 20),
               Container(
@@ -152,12 +144,16 @@ class _PredictionDialogState extends State<PredictionDialog> {
             backgroundColor: Colors.blue,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
           child: _isLoading
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white),
                 )
               : const Text('Simpan Prediksi'),
         ),
@@ -180,7 +176,7 @@ class _PredictionDialogState extends State<PredictionDialog> {
 
   Future<void> _submit() async {
     if (_selectedTeamId == null) return;
-    
+
     // Debug: Show detailed prediction info
     String predictionType = _getSelectedText();
     print('=== SUBMITTING PREDICTION ===');
@@ -188,14 +184,18 @@ class _PredictionDialogState extends State<PredictionDialog> {
     print('Selected Option: $_selectedOption');
     print('Predicted Team ID: $_selectedTeamId');
     print('Match ID: ${widget.match.id}');
-    print('Team1: ID=${widget.match.team1?.id}, Name="${widget.match.team1?.name}"');
-    print('Team2: ID=${widget.match.team2?.id}, Name="${widget.match.team2?.name}"');
-    
+    print(
+        'Team1: ID=${widget.match.team1?.id}, Name="${widget.match.team1?.name}"');
+    print(
+        'Team2: ID=${widget.match.team2?.id}, Name="${widget.match.team2?.name}"');
+
     // Validate predicted_team_id logic
-    if (_selectedOption == 'team1' && _selectedTeamId != widget.match.team1?.id) {
+    if (_selectedOption == 'team1' &&
+        _selectedTeamId != widget.match.team1?.id) {
       print('ERROR: Team1 selection mismatch!');
       return;
-    } else if (_selectedOption == 'team2' && _selectedTeamId != widget.match.team2?.id) {
+    } else if (_selectedOption == 'team2' &&
+        _selectedTeamId != widget.match.team2?.id) {
       print('ERROR: Team2 selection mismatch!');
       return;
     } else if (_selectedOption == 'draw' && _selectedTeamId != 0) {
@@ -204,11 +204,11 @@ class _PredictionDialogState extends State<PredictionDialog> {
     }
     print('Validation passed!');
     print('============================');
-    
+
     // Check token availability
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    
+
     if (token == null || token.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -218,18 +218,19 @@ class _PredictionDialogState extends State<PredictionDialog> {
       );
       return;
     }
-    
+
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
-      final predictionProvider = Provider.of<PredictionProvider>(context, listen: false);
+      final predictionProvider =
+          Provider.of<PredictionProvider>(context, listen: false);
       final success = await predictionProvider.createPrediction(
-        widget.match.id, 
+        widget.match.id,
         _selectedTeamId!,
       );
-      
+
       if (success) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -241,7 +242,8 @@ class _PredictionDialogState extends State<PredictionDialog> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(predictionProvider.errorMessage ?? 'Failed to save prediction'),
+            content: Text(
+                predictionProvider.errorMessage ?? 'Failed to save prediction'),
             backgroundColor: Colors.red,
           ),
         );
@@ -280,13 +282,15 @@ class _PredictionDialogState extends State<PredictionDialog> {
             color: isSelected ? color : Colors.grey.shade300,
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: color.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ] : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: color.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           children: [

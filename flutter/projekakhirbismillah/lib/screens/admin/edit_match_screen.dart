@@ -43,21 +43,30 @@ class _EditMatchScreenState extends State<EditMatchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Color primaryGreen = Colors.green[700]!;
+    final Color bgColor = Colors.green[50]!;
+
     return Scaffold(
+      backgroundColor: bgColor,
       appBar: AppBar(
         title: const Text('Edit Match'),
-        backgroundColor: Colors.blue,
+        backgroundColor: primaryGreen,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: Consumer<MatchProvider>(
         builder: (context, matchProvider, child) {
           return Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(24.0),
             child: Form(
               key: _formKey,
               child: Column(
                 children: [
                   Card(
+                    elevation: 6,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
@@ -67,6 +76,7 @@ class _EditMatchScreenState extends State<EditMatchScreen> {
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
+                              color: Colors.green,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -80,27 +90,31 @@ class _EditMatchScreenState extends State<EditMatchScreen> {
                   ),
                   const SizedBox(height: 24),
                   Card(
-                    color: Colors.blue.shade50,
+                    color: Colors.green.shade50,
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
-                          const Icon(Icons.info, color: Colors.blue),
+                          const Icon(Icons.info, color: Colors.green),
                           const SizedBox(height: 8),
                           const Text(
                             'Match Status Information',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Colors.blue,
+                              color: Colors.green,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            widget.match.isFinished 
+                            widget.match.isFinished
                                 ? 'Match is finished. Current result: ${widget.match.result}'
                                 : 'Match is upcoming. Enter scores to finish the match.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.blue.shade700),
+                            style: TextStyle(color: Colors.green.shade700),
                           ),
                         ],
                       ),
@@ -112,6 +126,7 @@ class _EditMatchScreenState extends State<EditMatchScreen> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
+                      color: Colors.green,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -121,8 +136,13 @@ class _EditMatchScreenState extends State<EditMatchScreen> {
                         child: TextFormField(
                           controller: _skor1Controller,
                           decoration: InputDecoration(
-                            labelText: '${widget.match.team1?.name ?? 'Team 1'} Score',
-                            border: const OutlineInputBorder(),
+                            labelText:
+                                '${widget.match.team1?.name ?? 'Team 1'} Score',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            filled: true,
+                            fillColor: bgColor,
                           ),
                           keyboardType: TextInputType.number,
                           validator: (value) {
@@ -139,15 +159,21 @@ class _EditMatchScreenState extends State<EditMatchScreen> {
                       const SizedBox(width: 16),
                       const Text(
                         '-',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: TextFormField(
                           controller: _skor2Controller,
                           decoration: InputDecoration(
-                            labelText: '${widget.match.team2?.name ?? 'Team 2'} Score',
-                            border: const OutlineInputBorder(),
+                            labelText:
+                                '${widget.match.team2?.name ?? 'Team 2'} Score',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            filled: true,
+                            fillColor: bgColor,
                           ),
                           keyboardType: TextInputType.number,
                           validator: (value) {
@@ -171,7 +197,7 @@ class _EditMatchScreenState extends State<EditMatchScreen> {
                         if (_formKey.currentState!.validate()) {
                           final score1 = int.parse(_skor1Controller.text);
                           final score2 = int.parse(_skor2Controller.text);
-                          
+
                           final matchData = {
                             'skor1': score1,
                             'skor2': score2,
@@ -186,29 +212,44 @@ class _EditMatchScreenState extends State<EditMatchScreen> {
                             Navigator.pop(context);
                             String resultMessage;
                             if (score1 > score2) {
-                              resultMessage = 'Match completed! Winner: ${widget.match.team1?.name ?? 'Team 1'}';
+                              resultMessage =
+                                  'Match completed! Winner: ${widget.match.team1?.name ?? 'Team 1'}';
                             } else if (score2 > score1) {
-                              resultMessage = 'Match completed! Winner: ${widget.match.team2?.name ?? 'Team 2'}';
+                              resultMessage =
+                                  'Match completed! Winner: ${widget.match.team2?.name ?? 'Team 2'}';
                             } else {
                               resultMessage = 'Match completed! Result: Draw';
                             }
-                            
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text(resultMessage)),
                             );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Failed to update match')),
+                              const SnackBar(
+                                  content: Text('Failed to update match')),
                             );
                           }
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: primaryGreen,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 2,
                       ),
-                      child: Text(widget.match.isFinished ? 'Update Match Result' : 'Finish Match'),
+                      child: Text(
+                        widget.match.isFinished
+                            ? 'Update Match Result'
+                            : 'Finish Match',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                     ),
                   ),
                 ],

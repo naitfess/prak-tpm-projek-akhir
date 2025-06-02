@@ -51,51 +51,70 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Color primaryGreen = Colors.green[700]!;
+    final Color accentGreen = Colors.green[400]!;
+    final Color bgColor = Colors.green[50]!;
+
     return Scaffold(
-      backgroundColor: Colors.green[50],
+      backgroundColor: bgColor,
       appBar: AppBar(
         title: const Text('Register'),
-        backgroundColor: Colors.green[700],
+        backgroundColor: primaryGreen,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: Consumer<AuthProvider>(
         builder: (context, authProvider, child) {
           return Center(
             child: SingleChildScrollView(
               child: Card(
-                elevation: 6,
+                elevation: 10,
                 margin:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18)),
+                  borderRadius: BorderRadius.circular(28),
+                ),
                 child: Padding(
-                  padding: const EdgeInsets.all(24.0),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
                   child: Form(
                     key: _formKey,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
-                          Icons.sports_soccer,
-                          size: 80,
-                          color: Colors.green,
-                        ),
-                        const SizedBox(height: 24),
-                        const Text(
-                          'Register Account',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
+                        Container(
+                          decoration: BoxDecoration(
+                            color: accentGreen.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          padding: const EdgeInsets.all(18),
+                          child: const Icon(
+                            Icons.sports_soccer,
+                            size: 64,
                             color: Colors.green,
                           ),
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 18),
+                        Text(
+                          'Register Account',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: primaryGreen,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 28),
                         TextFormField(
                           controller: _usernameController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Username',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.person),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            prefixIcon: const Icon(Icons.person),
+                            filled: true,
+                            fillColor: bgColor,
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -107,12 +126,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 18),
                         TextFormField(
                           controller: _passwordController,
                           decoration: InputDecoration(
                             labelText: 'Password',
-                            border: const OutlineInputBorder(),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                             prefixIcon: const Icon(Icons.lock),
                             suffixIcon: IconButton(
                               icon: Icon(_obscurePassword
@@ -124,6 +145,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 });
                               },
                             ),
+                            filled: true,
+                            fillColor: bgColor,
                           ),
                           obscureText: _obscurePassword,
                           validator: (value) {
@@ -136,12 +159,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 18),
                         TextFormField(
                           controller: _confirmPasswordController,
                           decoration: InputDecoration(
                             labelText: 'Confirm Password',
-                            border: const OutlineInputBorder(),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
                               icon: Icon(_obscureConfirmPassword
@@ -154,6 +179,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 });
                               },
                             ),
+                            filled: true,
+                            fillColor: bgColor,
                           ),
                           obscureText: _obscureConfirmPassword,
                           validator: (value) {
@@ -166,25 +193,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 28),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed:
                                 authProvider.isLoading ? null : _register,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green[700],
+                              backgroundColor: primaryGreen,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
                               ),
+                              elevation: 2,
+                              shadowColor: accentGreen,
                             ),
                             child: authProvider.isLoading
                                 ? const CircularProgressIndicator(
                                     color: Colors.white)
                                 : const Text('Register',
-                                    style: TextStyle(fontSize: 16)),
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.1,
+                                    )),
                           ),
                         ),
                       ],

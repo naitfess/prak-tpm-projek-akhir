@@ -26,9 +26,13 @@ class _AdminMatchesScreenState extends State<AdminMatchesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Color primaryGreen = Colors.green[700]!;
+    final Color bgColor = Colors.green[50]!;
+
     return Consumer<MatchProvider>(
       builder: (context, matchProvider, child) {
         return Scaffold(
+          backgroundColor: bgColor,
           body: matchProvider.isLoading
               ? const Center(child: CircularProgressIndicator())
               : matchProvider.errorMessage != null
@@ -44,6 +48,13 @@ class _AdminMatchesScreenState extends State<AdminMatchesScreen> {
                           const SizedBox(height: 16),
                           ElevatedButton(
                             onPressed: () => matchProvider.loadMatches(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryGreen,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
                             child: const Text('Retry'),
                           ),
                         ],
@@ -77,7 +88,7 @@ class _AdminMatchesScreenState extends State<AdminMatchesScreen> {
                     MaterialPageRoute(builder: (_) => const AddTeamScreen()),
                   );
                 },
-                backgroundColor: Colors.green,
+                backgroundColor: primaryGreen,
                 child: const Icon(Icons.group_add, color: Colors.white),
               ),
               const SizedBox(height: 16),
@@ -100,8 +111,11 @@ class _AdminMatchesScreenState extends State<AdminMatchesScreen> {
   }
 
   Widget _buildMatchCard(BuildContext context, MatchSchedule match) {
+    final Color primaryGreen = Colors.green[700]!;
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -215,7 +229,7 @@ class _AdminMatchesScreenState extends State<AdminMatchesScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: match.isFinished ? Colors.green : Colors.orange,
+                color: match.isFinished ? primaryGreen : Colors.orange,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(

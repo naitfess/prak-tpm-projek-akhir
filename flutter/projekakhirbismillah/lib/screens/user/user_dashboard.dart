@@ -52,10 +52,13 @@ class _UserDashboardState extends State<UserDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final Color bgColor = Colors.green[50]!;
+    final Color primaryGreen = Colors.green[700]!;
+
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         return Scaffold(
-          backgroundColor: Colors.grey[100],
+          backgroundColor: bgColor,
           appBar: AppBar(
             elevation: 4,
             title: Row(
@@ -71,7 +74,7 @@ class _UserDashboardState extends State<UserDashboard> {
                 ),
               ],
             ),
-            backgroundColor: Colors.green[700],
+            backgroundColor: primaryGreen,
             foregroundColor: Colors.white,
             actions: [
               Padding(
@@ -132,7 +135,7 @@ class _UserDashboardState extends State<UserDashboard> {
           ),
           bottomNavigationBar: BottomNavigationBar(
             backgroundColor: Colors.white,
-            selectedItemColor: Colors.green[700],
+            selectedItemColor: primaryGreen,
             unselectedItemColor: Colors.grey,
             selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
             currentIndex: _currentIndex,

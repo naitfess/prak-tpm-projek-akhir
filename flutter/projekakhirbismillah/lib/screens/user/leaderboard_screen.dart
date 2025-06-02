@@ -21,11 +21,16 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Color bgColor = Colors.green[50]!;
+    final Color primaryGreen = Colors.green[700]!;
+
     return Scaffold(
+      backgroundColor: bgColor,
       appBar: AppBar(
         title: const Text('Leaderboard'),
-        backgroundColor: Colors.blue,
+        backgroundColor: primaryGreen,
         foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -64,6 +69,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     onPressed: () {
                       leaderboardProvider.refreshAll();
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryGreen,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -75,34 +87,25 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             onRefresh: () => leaderboardProvider.refreshAll(),
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // User's Rank Card
                   if (leaderboardProvider.userRank != null)
                     _buildUserRankCard(leaderboardProvider.userRank!),
-
                   const SizedBox(height: 24),
-
-                  // Stats Card
                   if (leaderboardProvider.stats != null)
                     _buildStatsCard(leaderboardProvider.stats!),
-
                   const SizedBox(height: 24),
-
-                  // Leaderboard Title
                   const Text(
                     'Top 10 Players',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue,
+                      color: Colors.green,
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // Leaderboard List
                   if (leaderboardProvider.leaderboard.isEmpty)
                     const Center(
                       child: Text(
@@ -127,10 +130,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   Widget _buildUserRankCard(UserRank userRank) {
     return Card(
-      elevation: 4,
-      color: Colors.blue.shade50,
+      elevation: 6,
+      color: Colors.green.shade50,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -139,16 +143,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue,
+                color: Colors.green,
               ),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.blue,
+                    color: Colors.green,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -199,9 +204,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   Widget _buildStatsCard(LeaderboardStats stats) {
     return Card(
-      elevation: 2,
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -282,7 +288,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       padding: const EdgeInsets.all(8),
       child: Column(
         children: [
-          Icon(icon, size: 24, color: Colors.blue),
+          Icon(icon, size: 24, color: Colors.green),
           const SizedBox(height: 4),
           Text(
             value,
@@ -317,11 +323,14 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     } else if (entry.rank == 3) {
       rankColor = Colors.brown;
       rankIcon = Icons.emoji_events;
+    } else {
+      rankColor = Colors.green;
     }
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      elevation: entry.rank <= 3 ? 3 : 1,
+      margin: const EdgeInsets.only(bottom: 10),
+      elevation: entry.rank <= 3 ? 6 : 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: ListTile(
         leading: Container(
           width: 40,
@@ -351,14 +360,14 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: Colors.blue.shade50,
+            color: Colors.green.shade50,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
             '${entry.poin} pts',
             style: const TextStyle(
               fontWeight: FontWeight.bold,
-              color: Colors.blue,
+              color: Colors.green,
             ),
           ),
         ),

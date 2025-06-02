@@ -27,36 +27,50 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<NewsProvider>(
-      builder: (context, newsProvider, child) {
-        return Scaffold(
-          body: newsProvider.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
-                  onRefresh: () async {
-                    await newsProvider.loadNews();
-                  },
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: newsProvider.news.length,
-                    itemBuilder: (context, index) {
-                      final news = newsProvider.news[index];
-                      return _buildNewsCard(context, news);
+    final Color bgColor = Colors.green[50]!;
+    return Scaffold(
+      backgroundColor: bgColor,
+      body: Consumer<NewsProvider>(
+        builder: (context, newsProvider, child) {
+          return Scaffold(
+            body: newsProvider.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : RefreshIndicator(
+                    onRefresh: () async {
+                      await newsProvider.loadNews();
                     },
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: newsProvider.news.length,
+                      itemBuilder: (context, index) {
+                        final news = newsProvider.news[index];
+                        return _buildNewsCard(context, news);
+                      },
+                    ),
                   ),
-                ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AddNewsScreen()),
-              );
-            },
-            backgroundColor: Colors.blue,
-            child: const Icon(Icons.add, color: Colors.white),
-          ),
-        );
-      },
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddNewsScreen()),
+                );
+              },
+              backgroundColor: Colors.blue,
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddNewsScreen()),
+          );
+        },
+        backgroundColor: Colors.blue,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 

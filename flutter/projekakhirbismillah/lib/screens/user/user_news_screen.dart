@@ -22,24 +22,28 @@ class _UserNewsScreenState extends State<UserNewsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<NewsProvider>(
-      builder: (context, newsProvider, child) {
-        return newsProvider.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : RefreshIndicator(
-                onRefresh: () async {
-                  await newsProvider.loadNews();
-                },
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: newsProvider.news.length,
-                  itemBuilder: (context, index) {
-                    final news = newsProvider.news[index];
-                    return _buildNewsCard(context, news);
+    final Color bgColor = Colors.green[50]!;
+    return Scaffold(
+      backgroundColor: bgColor,
+      body: Consumer<NewsProvider>(
+        builder: (context, newsProvider, child) {
+          return newsProvider.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                  onRefresh: () async {
+                    await newsProvider.loadNews();
                   },
-                ),
-              );
-      },
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: newsProvider.news.length,
+                    itemBuilder: (context, index) {
+                      final news = newsProvider.news[index];
+                      return _buildNewsCard(context, news);
+                    },
+                  ),
+                );
+        },
+      ),
     );
   }
 

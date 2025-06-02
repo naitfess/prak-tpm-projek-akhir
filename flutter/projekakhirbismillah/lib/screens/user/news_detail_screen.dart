@@ -110,9 +110,10 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final userId = _currentUserId;
+    final Color bgColor = Colors.green[50]!;
 
     return Scaffold(
-      backgroundColor: Colors.green[50],
+      backgroundColor: bgColor,
       appBar: AppBar(
         elevation: 2,
         title: Row(
