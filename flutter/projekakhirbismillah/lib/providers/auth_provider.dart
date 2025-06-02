@@ -18,22 +18,32 @@ class AuthProvider with ChangeNotifier {
   Future<void> checkAuthStatus() async {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString('token');
-    
-    print('Checking auth status, token: ${_token?.substring(0, 20)}...'); // Debug log
-    
+
+    print(
+        'Checking auth status, token: ${_token?.substring(0, 20)}...'); // Debug log
+
     if (_token != null) {
       try {
+        // Set token ke ApiService jika perlu
+        // ApiService.setToken(_token!); // Sudah tidak perlu jika getHeaders sudah benar
         final response = await ApiService.getUserProfile();
-        if (response['success']) {
+        print('getUserProfile response: $response'); // Debug log
+        if (response['success'] == true && response['data'] != null) {
           _user = User.fromJson(response['data']);
           notifyListeners();
-        } else {
+        } else if (response['error'] == 'Failed to get profile') {
+          // Hanya logout jika benar-benar unauthorized
           await logout();
+        } else {
+          print('Profile fetch failed but not unauthorized, keeping user.');
         }
       } catch (e) {
         print('Auth check error: $e');
-        await logout();
+        // Jangan langsung logout, bisa jadi hanya error jaringan
       }
+    } else {
+      _user = null;
+      notifyListeners();
     }
   }
 
@@ -45,19 +55,19 @@ class AuthProvider with ChangeNotifier {
     try {
       final response = await ApiService.login(username, password);
       print('Auth provider received response: $response');
-      
+
       if (response['success'] == true) {
         final data = response['data'];
         _token = data['token'];
         _user = User.fromJson(data['user']);
-        
+
         // Double save token sebagai backup
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', _token!);
         await prefs.setString('backup_token', _token!);
-        
+
         print('Token saved in auth provider: ${_token!.substring(0, 20)}...');
-        
+
         _isLoading = false;
         notifyListeners();
         return true;
@@ -69,20 +79,22 @@ class AuthProvider with ChangeNotifier {
       _errorMessage = 'Network error: $e';
       print('Login error: $e');
     }
-    
+
     _isLoading = false;
     notifyListeners();
     return false;
   }
 
-  Future<bool> register(String username, String password, {String role = 'user'}) async {
+  Future<bool> register(String username, String password,
+      {String role = 'user'}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final response = await ApiService.register(username, password, role: role);
-      
+      final response =
+          await ApiService.register(username, password, role: role);
+
       if (response['success']) {
         _isLoading = false;
         notifyListeners();
@@ -94,7 +106,7 @@ class AuthProvider with ChangeNotifier {
       _errorMessage = 'Network error: $e';
       print('Register error: $e');
     }
-    
+
     _isLoading = false;
     notifyListeners();
     return false;
@@ -106,11 +118,11 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       print('Logout error: $e');
     }
-    
+
     _user = null;
     _token = null;
     _errorMessage = null;
-    
+
     notifyListeners();
   }
 

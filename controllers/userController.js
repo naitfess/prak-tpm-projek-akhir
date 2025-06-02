@@ -80,10 +80,30 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const getProfile = async (req, res) => {
+  try {
+    // req.user sudah diisi oleh middleware authenticateToken
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+    res.json({
+      id: req.user.id,
+      username: req.user.username,
+      poin: req.user.poin,
+      role: req.user.role,
+      createdAt: req.user.createdAt,
+      updatedAt: req.user.updatedAt
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 module.exports = {
   getAllUsers,
   createUser,
   getUserById,
   updateUser,
-  deleteUser
+  deleteUser,
+  getProfile
 };

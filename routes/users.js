@@ -4,12 +4,14 @@ const {
   createUser, 
   getUserById, 
   updateUser, 
-  deleteUser 
+  deleteUser,
+  getProfile 
 } = require('../controllers/userController');
 const { authenticateToken, requireAdmin, requireOwnerOrAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
+router.get('/profile', authenticateToken, getProfile);
 router.get('/', authenticateToken, requireAdmin, getAllUsers);
 router.post('/', authenticateToken, requireAdmin, createUser);
 router.get('/:id', authenticateToken, requireOwnerOrAdmin, getUserById);

@@ -27,6 +27,12 @@ class _UserDashboardState extends State<UserDashboard> {
   void initState() {
     super.initState();
     verifyToken();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.checkAuthStatus();
+      // Debug log
+      print('User after checkAuthStatus: ${authProvider.user?.username}');
+    });
   }
 
   Future<void> verifyToken() async {
