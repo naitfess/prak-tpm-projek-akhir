@@ -15,19 +15,25 @@ class AuthProvider with ChangeNotifier {
   bool get isAuthenticated => _token != null && _user != null;
   String? get errorMessage => _errorMessage;
 
+  // Safe substring method to avoid range errors
+  String _safeSubstring(String text, int start, int end) {
+    if (text.length <= start) return text;
+    if (text.length < end) return text.substring(start);
+    return text.substring(start, end);
+  }
+
   Future<void> checkAuthStatus() async {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString('token');
 
-    print(
-        'Checking auth status, token: ${_token?.substring(0, 20)}...'); // Debug log
-
     if (_token != null) {
+      print('Checking auth status, token: ${_safeSubstring(_token!, 0, 20)}...');
+
       try {
         // Set token ke ApiService jika perlu
         // ApiService.setToken(_token!); // Sudah tidak perlu jika getHeaders sudah benar
         final response = await ApiService.getUserProfile();
-        print('getUserProfile response: $response'); // Debug log
+        print('getUserProfile response: $response');
         if (response['success'] == true && response['data'] != null) {
           _user = User.fromJson(response['data']);
           notifyListeners();

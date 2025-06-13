@@ -6,13 +6,31 @@ class ApiService {
   // static const String baseUrl = 'http://10.0.2.2:3000/api'; // For Android emulator
   static const String baseUrl =
       'https://be-trigger-alungnajib-1061342868557.us-central1.run.app/api'; // For iOS simulator
+  
+  // Client for dependency injection in tests
+  static http.Client _client = http.Client();
+  
+  // Method to set client for testing
+  static void setHttpClient(http.Client client) {
+    _client = client;
+  }
+
+  // Safe substring method to avoid range errors
+  static String _safeSubstring(String text, int start, int end) {
+    if (text.length <= start) return text;
+    if (text.length < end) return text.substring(start);
+    return text.substring(start, end);
+  }
 
   static Future<String?> getToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
-      print(
-          'Getting token from storage: ${token != null ? "${token.substring(0, 20)}..." : "null"}'); // Debug log
+      if (token != null && token.isNotEmpty) {
+        print('Getting token from storage: ${_safeSubstring(token, 0, 20)}...');
+      } else {
+        print('Getting token from storage: null');
+      }
       return token;
     } catch (e) {
       print('Error getting token: $e');
@@ -25,18 +43,20 @@ class ApiService {
       final prefs = await SharedPreferences.getInstance();
       final success = await prefs.setString('token', token);
       print('Token save result: $success');
-      print(
-          'Token saved in ApiService: ${token.substring(0, 20)}...'); // Debug log
+      print('Token saved in ApiService: ${_safeSubstring(token, 0, 20)}...');
 
       // Immediate verification
       await Future.delayed(Duration(milliseconds: 100));
       final savedToken = prefs.getString('token');
-      print(
-          'Immediate verification - token in storage: ${savedToken?.substring(0, 20)}...'); // Debug log
+      if (savedToken != null && savedToken.isNotEmpty) {
+        print('Immediate verification - token in storage: ${_safeSubstring(savedToken, 0, 20)}...');
+      } else {
+        print('Immediate verification - token in storage: null');
+      }
 
       // Extra verification with different method
       final keys = prefs.getKeys();
-      print('All SharedPreferences keys: $keys'); // Debug log
+      print('All SharedPreferences keys: $keys');
     } catch (e) {
       print('Error saving token: $e');
     }
@@ -61,7 +81,7 @@ class ApiService {
   // Health check
   static Future<Map<String, dynamic>> healthCheck() async {
     try {
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$baseUrl/health'),
         headers: await getHeaders(),
       );
@@ -78,7 +98,7 @@ class ApiService {
   static Future<Map<String, dynamic>> login(
       String username, String password) async {
     try {
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse('$baseUrl/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
